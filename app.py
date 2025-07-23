@@ -1,180 +1,248 @@
-from flask import Flask, request
-from twilio.twiml.messaging_response import MessagingResponse
-from pymongo import MongoClient
-from datetime import datetime, timezone
+import os
 import re
+from datetime import datetime, timezone
+from flask import Flask, request
+from pymongo import MongoClient
+from twilio.twiml.messaging_response import MessagingResponse
+from twilio.rest import Client
 
-# — MongoDB connection (password = “luster”) —
+# ─── Twilio REST client setup ──────────────────────────────────────
+# make sure you have TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN & TWILIO_WHATSAPP_NUMBER in env
+account_sid     = os.environ["TWILIO_ACCOUNT_SID"]
+auth_token      = os.environ["TWILIO_AUTH_TOKEN"]
+whatsapp_number = os.environ["TWILIO_WHATSAPP_NUMBER"]
+
+
+# ─── Bot text (English only) ───────────────────────────────────────
+BOT_TEXT = {
+    "main_menu": (
+        "Hi, thanks for contacting *Luster Chocolate*.\n"
+        "You can choose from one of the options below:\n\n"
+        "1️⃣ Contact us\n"
+        "2️⃣ Order products\n"
+        "3️⃣ Working hours\n"
+        "4️⃣ Address"
+    ),
+    "invalid":      "Please enter a valid option (1–4).",
+    "prompt_contact": (
+        "📞 +225 07 88 04 67 36 / +225 01 40 45 44 40\n"
+        "✉️ info@lusterchocolate.com"
+    ),
+    "ordering_mode": "You have entered *ordering mode*.",
+    "ask_more":      "🛒 In cart: {cart}\nAnything else? 1️⃣ Yes 2️⃣ No",
+    "ask_address":   "Please reply with your delivery address to confirm.",
+    "thank_you":     "Thank you! 😊 Your order will arrive within the next hour.",
+    "next_steps": (
+        "What would you like next?\n"
+        "1️⃣ Contact us\n"
+        "2️⃣ Another order\n"
+        "3️⃣ Hours\n"
+        "4️⃣ Address"
+    )
+}
+
+# ─── Products & prices ──────────────────────────────────────────────
+PRODUCT_CATEGORIES = {
+    "Chocolate Bars": [
+        {"id":"1","title":"Roasted Coffee 70% Cocoa",    "description":"$2.99"},
+        {"id":"2","title":"Roasted Cocoa 70% Cocoa",    "description":"$2.99"},
+        {"id":"3","title":"Ginger 70% Cocoa",           "description":"$2.99"},
+        {"id":"4","title":"Cocoa Nibs 70% Cocoa",       "description":"$2.99"},
+    ],
+    "Chocolate Pouches": [
+        {"id":"5","title":"Cocoa Butter",                           "description":"$12.00 – $24.00"},
+        {"id":"6","title":"Roasted Cashews in Dark Chocolate",      "description":"$7.00 – $27.00"},
+        {"id":"7","title":"Roasted Cocoa Nibs",                     "description":"$11.50 – $22.00"},
+        {"id":"8","title":"Roasted Cocoa Beans",                    "description":"$7.00"},
+        {"id":"9","title":"Cocoa Powder 100% Natural, 0% Sugar",    "description":"$7.00 – $17.00"},
+    ],
+}
+
+# ─── MongoDB setup ─────────────────────────────────────────────────
 cluster = MongoClient(
     "mongodb+srv://luster:luster@cluster0.kl9tztu.mongodb.net/"
-    "?retryWrites=true&w=majority&appName=Cluster0"
+    "?retryWrites=true&w=majority"
 )
-db = cluster["Chocolate_boutique"]
-users = db["users"]
+db     = cluster["Chocolate_boutique"]
+users  = db["users"]
 orders = db["orders"]
-# —————————————————————————————————————————
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET","POST"])
 def reply():
-    text = request.form.get("Body", "").strip()
-    number = request.form.get("From", "").replace("whatsapp:", "")
-    resp = MessagingResponse()
-    user = users.find_one({"number": number})
+    # get WhatsApp list‐reply ID if they tapped a List Message
+    list_id = request.values.get("InteractiveReply.ListReply.Id")
+    raw_in  = list_id or request.form.get("Body","").strip()
+    num     = request.form.get("From","").replace("whatsapp:","")
+    txt     = re.sub(r"[^\w\s]","", raw_in).lower()
+    resp    = MessagingResponse()
+    user    = users.find_one({"number": num})
 
-    # normalize user text: lowercase, strip punctuation/extra whitespace
-    normalized = re.sub(r'[^\w\s]', '', text).strip().lower()
-
-    # ——— MAIN MENU TEXT —————————————————————————————————
-    main_menu = (
-        "Hi, thanks for contacting *Luster Chocolate*.\n"
-        "You can choose from one of the options below:\n\n"
-        "*Type*\n"
-        "1️⃣ To *contact* us\n"
-        "2️⃣ To *order* our products\n"
-        "3️⃣ To know our *working hours*\n"
-        "4️⃣ To get our *address*"
-    )
-    media_url = "https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg"
-
-    # — reset-to-main if they say any of these substrings —
-    reset_keys = ("hi", "hello", "menu", "start", "main", "option", "options")
-    if any(kw in normalized for kw in reset_keys):
+    # ── reset on greetings / main keywords
+    if any(kw in txt for kw in ("hi","hello","menu","start","main")):
         users.update_one(
-            {"number": number},
-            {"$set": {"status": "main"}},
+            {"number":num},
+            {"$set":{"status":"main","cart":[]}},
             upsert=True
         )
-        msg = resp.message(main_menu)
-        msg.media(media_url)
+        m = resp.message(BOT_TEXT["main_menu"])
+        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
         return str(resp)
 
-    # — brand-new user: show main menu and insert record —
+    # ── new user → main menu
     if user is None:
-        msg = resp.message(main_menu)
-        msg.media(media_url)
+        m = resp.message(BOT_TEXT["main_menu"])
+        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
         users.insert_one({
-            "number": number,
-            "status": "main",
-            "messages": []
+            "number":num, "status":"main", "cart":[], "messages":[]
         })
         return str(resp)
 
-    # — user in main menu: parse 1–4 —
+    # ── MAIN MENU logic
     if user["status"] == "main":
         try:
-            option = int(normalized)
+            opt = int(txt)
         except ValueError:
-            # invalid → re-show main menu
-            msg = resp.message(main_menu)
-            msg.media(media_url)
+            m = resp.message(BOT_TEXT["main_menu"])
+            m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
             return str(resp)
 
-        if option == 1:
-            resp.message(
-                "You can contact us via:\n"
-                "📞 +225 07 88 04 67 36 / +225 01 40 45 44 40\n"
-                "✉️ info@lusterchocolate.com"
+        if opt == 1:
+            resp.message(BOT_TEXT["prompt_contact"])
+        elif opt == 2:
+            resp.message(BOT_TEXT["ordering_mode"])
+            users.update_one({"number":num},{"$set":{"status":"ordering"}})
+
+            # ─ send interactive List Message ───────────────────────
+            twilio_client.messages.create(
+                from_=f"whatsapp:{whatsapp_number}",
+                to   =f"whatsapp:{num}",
+                interactive={  # type: ignore
+                    "type":"list",
+                    "body": {"text":"Please choose a product to add to your cart:"},
+                    "action":{
+                        "button":"View Products",
+                        "sections":[
+                            {
+                                "title":cat,
+                                "rows":[
+                                    {"id":item["id"],
+                                     "title":item["title"],
+                                     "description":item["description"]}
+                                    for item in items
+                                ]
+                            }
+                            for cat, items in PRODUCT_CATEGORIES.items()
+                        ]
+                    }
+                }
             )
-        elif option == 2:
-            resp.message("You have entered *ordering mode*.")
-            users.update_one({"number": number}, {"$set": {"status": "ordering"}})
-            resp.message(
-                "Please choose a product to order:\n\n"
-                "1️⃣ Roasted Coffee Chocolate Bar (70% Cocoa)\n"
-                "2️⃣ Roasted Cocoa Chocolate Bar (70% Cocoa)\n"
-                "3️⃣ Ginger Chocolate Bar (70% Cocoa)\n"
-                "4️⃣ Cocoa Nibs Chocolate Bar (70% Cocoa)\n"
-                "5️⃣ Cocoa Butter (100% Natural)\n"
-                "6️⃣ Roasted Cashews Coated with Dark Chocolate\n"
-                "7️⃣ Roasted Cocoa Nibs (Pouch)\n"
-                "8️⃣ Roasted Cocoa Beans\n"
-                "9️⃣ Cocoa Powder (100% Natural, 0% Sugar)\n"
-                "0️⃣ Go back to main menu"
-            )
-        elif option == 3:
+        elif opt == 3:
             resp.message("Our working hours are *9 a.m. to 5 p.m.*, Monday–Friday.")
-        elif option == 4:
-            resp.message(
-                "We’re located at:\n"
-                "*04 BP 1041 Abidjan 04, 9ème Tranche, Abidjan, Côte d’Ivoire*"
-            )
+        elif opt == 4:
+            resp.message("We’re at *04 BP 1041 Abidjan 04, Abidjan, Côte d’Ivoire*")
         else:
-            msg = resp.message(main_menu)
-            msg.media(media_url)
+            resp.message(BOT_TEXT["invalid"])
         return str(resp)
 
-    # — ordering in progress: parse product number —
+    # ── ORDERING MODE: they’ve tapped a list‐item or typed a number
     if user["status"] == "ordering":
         try:
-            choice = int(normalized)
+            choice = int(txt)
         except ValueError:
-            resp.message("Please enter a valid product number (0–9).")
+            resp.message(BOT_TEXT["invalid"])
             return str(resp)
 
-        if choice == 0:
-            users.update_one({"number": number}, {"$set": {"status": "main"}})
-            msg = resp.message(main_menu)
-            msg.media(media_url)
-        elif 1 <= choice <= 9:
-            products = [
-                "Roasted Coffee Chocolate Bar (70% Cocoa)",
-                "Roasted Cocoa Chocolate Bar (70% Cocoa)",
-                "Ginger Chocolate Bar (70% Cocoa)",
-                "Cocoa Nibs Chocolate Bar (70% Cocoa)",
-                "Cocoa Butter (100% Natural)",
-                "Roasted Cashews Coated with Dark Chocolate",
-                "Roasted Cocoa Nibs (Pouch)",
-                "Roasted Cocoa Beans",
-                "Cocoa Powder (100% Natural, 0% Sugar)"
-            ]
-            selected = products[choice - 1]
-            users.update_one(
-                {"number": number},
-                {"$set": {"status": "address", "item": selected}}
+        # look up the product title
+        selected = None
+        for items in PRODUCT_CATEGORIES.values():
+            for it in items:
+                if it["id"] == str(choice):
+                    selected = it["title"]
+        if not selected:
+            resp.message(BOT_TEXT["invalid"])
+            return str(resp)
+
+        # add to cart & ask if they want more
+        users.update_one(
+            {"number":num},
+            {"$push":{"cart": selected},
+             "$set": {"status":"ask_more"}}
+        )
+        cart = ", ".join(user.get("cart",[]) + [selected])
+        resp.message(BOT_TEXT["ask_more"].format(cart=cart))
+        return str(resp)
+
+    # ── ANYTHING ELSE? ──────────────────────────────────────────────
+    if user["status"] == "ask_more":
+        try:
+            opt = int(txt)
+        except ValueError:
+            resp.message(BOT_TEXT["invalid"])
+            return str(resp)
+
+        if opt == 1:
+            users.update_one({"number":num},{"$set":{"status":"ordering"}})
+            # resend list
+            twilio_client.messages.create(
+                from_=f"whatsapp:{whatsapp_number}",
+                to   =f"whatsapp:{num}",
+                interactive={  # type: ignore
+                    "type":"list",
+                    "body": {"text":"Please choose another product:"},
+                    "action":{
+                        "button":"View Products",
+                        "sections":[
+                            {
+                                "title":cat,
+                                "rows":[
+                                    {"id":item["id"],
+                                     "title":item["title"],
+                                     "description":item["description"]}
+                                    for item in items
+                                ]
+                            }
+                            for cat, items in PRODUCT_CATEGORIES.items()
+                        ]
+                    }
+                }
             )
-            resp.message(f"Great choice! *{selected}* selected.")
-            resp.message("Please reply with your delivery address to confirm.")
+        elif opt == 2:
+            users.update_one({"number":num},{"$set":{"status":"address"}})
+            resp.message(BOT_TEXT["ask_address"])
         else:
-            resp.message("Please select a number between 0 and 9.")
+            resp.message(BOT_TEXT["invalid"])
         return str(resp)
 
-    # — collecting address: finalize order —
+    # ── ADDRESS COLLECTION ──────────────────────────────────────
     if user["status"] == "address":
-        selected = user.get("item", "Unknown item")
-        resp.message("Thank you! 😊")
-        resp.message(
-            f"Your order for *{selected}* has been received and will be delivered within the next hour."
-        )
+        cart = user.get("cart",[])
+        resp.message(BOT_TEXT["thank_you"])
         orders.insert_one({
-            "number": number,
-            "item": selected,
-            "address": text,
-            "order_time": datetime.now(timezone.utc)
+            "number": num,
+            "items":  cart,
+            "address": raw_in,
+            "time":    datetime.now(timezone.utc)
         })
-        users.update_one({"number": number}, {"$set": {"status": "ordered"}})
-        return str(resp)
-
-    # — order complete: prompt next action & reset to main —
-    if user["status"] == "ordered":
-        resp.message(
-            "What would you like to do next?\n"
-            "1️⃣ Contact us\n"
-            "2️⃣ Place another order\n"
-            "3️⃣ Hours\n"
-            "4️⃣ Address"
+        users.update_one(
+            {"number":num},
+            {"$set":{"status":"ordered", "cart":[]}}
         )
-        users.update_one({"number": number}, {"$set": {"status": "main"}})
         return str(resp)
 
-    # — always log incoming message —
+    # ── AFTER ORDERED → next steps
+    if user["status"] == "ordered":
+        resp.message(BOT_TEXT["next_steps"])
+        users.update_one({"number":num},{"$set":{"status":"main"}})
+        return str(resp)
+
+    # ── fallback: just log it
     users.update_one(
-        {"number": number},
-        {"$push": {"messages": {"text": text, "date": datetime.now(timezone.utc)}}}
+        {"number":num},
+        {"$push":{"messages":{"text":raw_in,"date":datetime.now(timezone.utc)}}}
     )
-
     return str(resp)
-
+    
 if __name__ == "__main__":
     app.run()  

@@ -31,19 +31,6 @@ BOT_TEXT = {
     "address":       "We’re at *04 BP 1041 Abidjan 04, Abidjan, Côte d’Ivoire*",
 }
 
-# ─── PRODUCT CATALOG ───────────────────────────────────────────────
-PRODUCT_LIST = [
-    {"name":"Roasted Coffee Bar",        "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-coffee-bar.jpg"},
-    {"name":"Roasted Cocoa Bar",         "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-cocoa-bar.jpg"},
-    {"name":"Ginger Chocolate Bar",      "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/ginger-chocolate-bar.jpg"},
-    {"name":"Cocoa Nibs Bar",            "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-bar.jpg"},
-    {"name":"Cocoa Butter",              "price":"$12.00–$24.00", "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-butter.jpg"},
-    {"name":"Cashews in Dark Chocolate", "price":"$7.00–$27.00",  "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cashews-dark-chocolate.jpg"},
-    {"name":"Cocoa Nibs (Pouch)",        "price":"$11.50–$22.00","image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-pouch.jpg"},
-    {"name":"Cocoa Beans",               "price":"$7.00",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-beans.jpg"},
-    {"name":"Cocoa Powder",              "price":"$7.00–$17.00", "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-powder.jpg"},
-]
-
 # ─── MONGO SETUP ─────────────────────────────────────────────────────
 cluster = MongoClient(
     "mongodb+srv://luster:luster@cluster0.kl9tztu.mongodb.net/?retryWrites=true&w=majority"
@@ -54,19 +41,89 @@ orders = db["orders"]
 
 app = Flask(__name__)
 
-# ─── HELPER: send the current product with media, title, divider, price, controls
+# ─── HELPER: send product #idx with explicit media call ──────────────
 def send_product(resp, idx):
-    p = PRODUCT_LIST[idx]
-    # 1) Send the image as media
-    msg = resp.message()
-    msg.media(p["image"])
-    # 2) Send the caption below it
-    resp.message(
-        f"*{p['name']}*\n"
-        "------------------\n"
-        f"{p['price']}\n\n"
-        "◀Previous  Next▶"
-    )
+    if idx == 0:
+        msg = resp.message()
+        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-coffee-bar.jpg")
+        resp.message(
+            "*Roasted Coffee Bar*\n"
+            "------------------\n"
+            "$2.99\n\n"
+            "◀Previous  Next▶"
+        )
+    elif idx == 1:
+        msg = resp.message()
+        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-cocoa-bar.jpg")
+        resp.message(
+            "*Roasted Cocoa Bar*\n"
+            "------------------\n"
+            "$2.99\n\n"
+            "◀Previous  Next▶"
+        )
+    elif idx == 2:
+        msg = resp.message()
+        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/ginger-chocolate-bar.jpg")
+        resp.message(
+            "*Ginger Chocolate Bar*\n"
+            "------------------\n"
+            "$2.99\n\n"
+            "◀Previous  Next▶"
+        )
+    elif idx == 3:
+        msg = resp.message()
+        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-bar.jpg")
+        resp.message(
+            "*Cocoa Nibs Bar*\n"
+            "------------------\n"
+            "$2.99\n\n"
+            "◀Previous  Next▶"
+        )
+    elif idx == 4:
+        msg = resp.message()
+        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-butter.jpg")
+        resp.message(
+            "*Cocoa Butter*\n"
+            "------------------\n"
+            "$12.00–$24.00\n\n"
+            "◀Previous  Next▶"
+        )
+    elif idx == 5:
+        msg = resp.message()
+        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cashews-dark-chocolate.jpg")
+        resp.message(
+            "*Cashews in Dark Chocolate*\n"
+            "------------------\n"
+            "$7.00–$27.00\n\n"
+            "◀Previous  Next▶"
+        )
+    elif idx == 6:
+        msg = resp.message()
+        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-pouch.jpg")
+        resp.message(
+            "*Cocoa Nibs (Pouch)*\n"
+            "------------------\n"
+            "$11.50–$22.00\n\n"
+            "◀Previous  Next▶"
+        )
+    elif idx == 7:
+        msg = resp.message()
+        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-beans.jpg")
+        resp.message(
+            "*Cocoa Beans*\n"
+            "------------------\n"
+            "$7.00\n\n"
+            "◀Previous  Next▶"
+        )
+    elif idx == 8:
+        msg = resp.message()
+        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-powder.jpg")
+        resp.message(
+            "*Cocoa Powder*\n"
+            "------------------\n"
+            "$7.00–$17.00\n\n"
+            "◀Previous  Next▶"
+        )
     return str(resp)
 
 # ─── MAIN ROUTE ───────────────────────────────────────────────────────
@@ -124,11 +181,16 @@ def reply():
     if user["status"] == "browsing":
         idx = user.get("browse_index", 0)
         if "next" in txt:
-            idx = (idx + 1) % len(PRODUCT_LIST)
+            idx = (idx + 1) % 9
         elif "prev" in txt or "previous" in txt:
-            idx = (idx - 1) % len(PRODUCT_LIST)
+            idx = (idx - 1) % 9
         elif "add" in txt:
-            p_name = PRODUCT_LIST[idx]["name"]
+            names = [
+                "Roasted Coffee Bar","Roasted Cocoa Bar","Ginger Chocolate Bar",
+                "Cocoa Nibs Bar","Cocoa Butter","Cashews in Dark Chocolate",
+                "Cocoa Nibs (Pouch)","Cocoa Beans","Cocoa Powder"
+            ]
+            p_name = names[idx]
             users.update_one(
                 {"number":num},
                 {"$push":{"cart":p_name},"$set":{"status":"ask_more"}}
@@ -141,7 +203,6 @@ def reply():
             resp.message("Type ◀Previous, Next▶ or Add.")
             return str(resp)
 
-        # update index & show product
         users.update_one({"number":num},{"$set":{"browse_index":idx}})
         return send_product(resp, idx)
 
@@ -185,7 +246,7 @@ def reply():
         {"$push":{"messages":{"text":raw,"date":datetime.now(timezone.utc)}}}
     )
     return str(resp)
-    
+  
 if __name__ == "__main__":
     # Heroku always provides PORT in the environment
     port = int(os.environ["PORT"])

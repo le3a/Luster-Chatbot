@@ -5,7 +5,7 @@ from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
 from pymongo import MongoClient
 
-# ─── BOT TEXT ─────────────────────────────────────────────────────
+# ─── BOT TEXT ───────────────────────────────────────────────────────
 BOT_TEXT = {
     "main_menu": (
         "Hi, thanks for contacting *Luster Chocolate*.\n"
@@ -32,89 +32,87 @@ BOT_TEXT = {
 }
 
 # ─── MONGO SETUP ─────────────────────────────────────────────────────
-cluster = MongoClient(
-    "mongodb+srv://luster:luster@cluster0.kl9tztu.mongodb.net/?retryWrites=true&w=majority"
-)
+cluster = MongoClient("mongodb+srv://luster:luster@cluster0.kl9tztu.mongodb.net/?retryWrites=true&w=majority")
 db     = cluster["Chocolate_boutique"]
 users  = db["users"]
 orders = db["orders"]
 
 app = Flask(__name__)
 
-# ─── HELPER: send product #idx with explicit caption and media ───
+# ─── HELPER: send product #idx with description only ──────────────
 def send_product(resp, idx):
     if idx == 0:
-        m = resp.message(
+        resp.message(
             "*Roasted Coffee Bar*\n"
             "------------------\n"
             "$2.99\n\n"
+            "A dark chocolate bar infused with perfectly roasted coffee beans for a bold, aromatic flavor.\n\n"
             "◀Previous  Next▶"
         )
-        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-coffee-bar.jpg")
     elif idx == 1:
-        m = resp.message(
+        resp.message(
             "*Roasted Cocoa Bar*\n"
             "------------------\n"
             "$2.99\n\n"
+            "Our signature 70% cocoa dark chocolate bar, made from beans slow-roasted to deepen the natural chocolate notes.\n\n"
             "◀Previous  Next▶"
         )
-        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-cocoa-bar.jpg")
     elif idx == 2:
-        m = resp.message(
+        resp.message(
             "*Ginger Chocolate Bar*\n"
             "------------------\n"
             "$2.99\n\n"
+            "Rich dark chocolate meets zesty ginger for a warm, spicy-sweet treat that tingles the palate.\n\n"
             "◀Previous  Next▶"
         )
-        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/ginger-chocolate-bar.jpg")
     elif idx == 3:
-        m = resp.message(
+        resp.message(
             "*Cocoa Nibs Bar*\n"
             "------------------\n"
             "$2.99\n\n"
+            "Crunchy cocoa nibs enrobed in dark chocolate, offering an earthy texture and intense cocoa flavor.\n\n"
             "◀Previous  Next▶"
         )
-        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-bar.jpg")
     elif idx == 4:
-        m = resp.message(
+        resp.message(
             "*Cocoa Butter*\n"
             "------------------\n"
             "$12.00–$24.00\n\n"
+            "Pure, creamy cocoa butter sourced from the finest beans—perfect for baking or as a rich, velvety spread.\n\n"
             "◀Previous  Next▶"
         )
-        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-butter.jpg")
     elif idx == 5:
-        m = resp.message(
+        resp.message(
             "*Cashews in Dark Chocolate*\n"
             "------------------\n"
             "$7.00–$27.00\n\n"
+            "Roasted cashews lightly coated in our rich dark chocolate for a satisfying, crunchy snack.\n\n"
             "◀Previous  Next▶"
         )
-        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cashews-dark-chocolate.jpg")
     elif idx == 6:
-        m = resp.message(
+        resp.message(
             "*Cocoa Nibs (Pouch)*\n"
             "------------------\n"
             "$11.50–$22.00\n\n"
+            "Handpicked cocoa nibs packaged in a convenient pouch—ideal for smoothies, baking, or snacking.\n\n"
             "◀Previous  Next▶"
         )
-        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-pouch.jpg")
     elif idx == 7:
-        m = resp.message(
+        resp.message(
             "*Cocoa Beans*\n"
             "------------------\n"
             "$7.00\n\n"
+            "Whole dried cocoa beans, perfect for artisanal chocolate making or a crunchy healthful snack.\n\n"
             "◀Previous  Next▶"
         )
-        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-beans.jpg")
     elif idx == 8:
-        m = resp.message(
+        resp.message(
             "*Cocoa Powder*\n"
             "------------------\n"
             "$7.00–$17.00\n\n"
+            "Rich, unsweetened cocoa powder for baking, hot cocoa, or adding a decadent twist to your recipes.\n\n"
             "◀Previous  Next▶"
         )
-        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-powder.jpg")
     return str(resp)
 
 # ─── MAIN ROUTE ───────────────────────────────────────────────────────
@@ -137,7 +135,7 @@ def reply():
     if not user:
         m = resp.message(BOT_TEXT["main_menu"])
         m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
-        users.insert_one({"number": num, "status": "main", "browse_index": 0, "cart": [], "messages": []})
+        users.insert_one({"number":num,"status":"main","browse_index":0,"cart":[],"messages":[]})
         return str(resp)
 
     # — MAIN MENU —
@@ -164,7 +162,6 @@ def reply():
         elif "prev" in txt or "previous" in txt:
             idx = (idx - 1) % 9
         elif "add" in txt:
-            # Use the same names as in send_product
             names = [
                 "Roasted Coffee Bar","Roasted Cocoa Bar","Ginger Chocolate Bar",
                 "Cocoa Nibs Bar","Cocoa Butter","Cashews in Dark Chocolate",
@@ -187,10 +184,10 @@ def reply():
     if user["status"] == "ask_more":
         if txt in ("1", "yes"):
             users.update_one({"number":num},{"$set":{"status":"browsing"}})
-            return send_product(resp, user["browse_index"] )
+            return send_product(resp, user["browse_index"])
         elif txt in ("2", "no"):
             users.update_one({"number":num},{"$set":{"status":"address"}})
-            resp.message(BOT_TEXT["ask_address"])   
+            resp.message(BOT_TEXT["ask_address"])
         else:
             resp.message(BOT_TEXT["invalid"] )
         return str(resp)
@@ -209,12 +206,10 @@ def reply():
         users.update_one({"number":num},{"$set":{"status":"main"}})
         return str(resp)
 
-    # — fallback log —
+    # — FALLBACK: log everything —
     users.update_one({"number":num},{"$push":{"messages":{"text":raw,"date":datetime.now(timezone.utc)}}})
     return str(resp)
-    # — fallback log —
-    users.update_one({"number":num},{"$push":{"messages":{"text":raw,"date":datetime.now(timezone.utc)}}})
-    return str(resp)
+ 
   
 if __name__ == "__main__":
     # Heroku always provides PORT in the environment

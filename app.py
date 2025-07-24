@@ -16,7 +16,7 @@ BOT_TEXT = {
     ),
     "invalid":       "Please enter a valid option.",
     "prompt_contact":"📞 +225 07 88 04 67 36 / +225 01 40 45 44 40\n✉️ info@lusterchocolate.com",
-    "ordering_mode": "You have entered *ordering mode*.\nUse ◀Previous or Next▶ to browse or type Add to select.",
+    "ordering_mode": "You have entered *ordering mode*.\nUse ◀Previous  Next▶ to browse or type *Add* to select.",
     "ask_more":      "🛒 In cart: {cart}\nAnything else? 1️⃣ Yes 2️⃣ No",
     "ask_address":   "Please reply with your delivery address to confirm.",
     "thank_you":     "Thank you! 😊 Your order will arrive within the next hour.",
@@ -33,116 +33,66 @@ BOT_TEXT = {
 
 # ─── PRODUCT CATALOG ───────────────────────────────────────────────
 PRODUCTS = [
-    {
-        "name":  "Roasted Coffee Bar",
-        "price": "$2.99",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-coffee-bar.jpg"
-    },
-    {
-        "name":  "Roasted Cocoa Bar",
-        "price": "$2.99",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-cocoa-bar.jpg"
-    },
-    {
-        "name":  "Ginger Chocolate Bar",
-        "price": "$2.99",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/ginger-chocolate-bar.jpg"
-    },
-    {
-        "name":  "Cocoa Nibs Bar",
-        "price": "$2.99",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-bar.jpg"
-    },
-    {
-        "name":  "Cocoa Butter",
-        "price": "$12.00–$24.00",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-butter.jpg"
-    },
-    {
-        "name":  "Cashews in Dark Chocolate",
-        "price": "$7.00–$27.00",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cashews-dark-chocolate.jpg"
-    },
-    {
-        "name":  "Cocoa Nibs (Pouch)",
-        "price": "$11.50–$22.00",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-pouch.jpg"
-    },
-    {
-        "name":  "Cocoa Beans",
-        "price": "$7.00",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-beans.jpg"
-    },
-    {
-        "name":  "Cocoa Powder",
-        "price": "$7.00–$17.00",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-powder.jpg"
-    },
+    {"name":"Roasted Coffee Bar",        "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-coffee-bar.jpg"},
+    {"name":"Roasted Cocoa Bar",         "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-cocoa-bar.jpg"},
+    {"name":"Ginger Chocolate Bar",      "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/ginger-chocolate-bar.jpg"},
+    {"name":"Cocoa Nibs Bar",            "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-bar.jpg"},
+    {"name":"Cocoa Butter",              "price":"$12.00–$24.00", "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-butter.jpg"},
+    {"name":"Cashews in Dark Chocolate", "price":"$7.00–$27.00",  "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cashews-dark-chocolate.jpg"},
+    {"name":"Cocoa Nibs (Pouch)",        "price":"$11.50–$22.00", "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-pouch.jpg"},
+    {"name":"Cocoa Beans",               "price":"$7.00",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-beans.jpg"},
+    {"name":"Cocoa Powder",              "price":"$7.00–$17.00",  "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-powder.jpg"},
 ]
 
 # ─── MONGO SETUP ─────────────────────────────────────────────────────
-cluster = MongoClient(
-    "mongodb+srv://luster:luster@cluster0.kl9tztu.mongodb.net/?retryWrites=true&w=majority"
-)
+cluster = MongoClient("mongodb+srv://luster:luster@cluster0.kl9tztu.mongodb.net/?retryWrites=true&w=majority")
 db     = cluster["Chocolate_boutique"]
 users  = db["users"]
 orders = db["orders"]
 
 app = Flask(__name__)
 
-# ─── HELPER: send one message with image + text ────────────────────
+# ─── HELPER: send a single <Message> with caption+media ─────────────
 def send_product(resp, idx):
     p = PRODUCTS[idx]
-    msg = resp.message(
+    m = resp.message(
         f"*{p['name']}*\n"
         "------------------\n"
         f"{p['price']}\n\n"
         "◀Previous  Next▶"
     )
-    msg.media(p["image"])
+    m.media(p["image"])
     return str(resp)
 
 # ─── MAIN ROUTE ───────────────────────────────────────────────────────
 @app.route("/", methods=["GET","POST"])
 def reply():
-    raw = request.form.get("Body","").strip()
-    num = request.form.get("From","").replace("whatsapp:","")
+    raw = request.form.get("Body", "").strip()
+    num = request.form.get("From", "").replace("whatsapp:", "")
     txt = re.sub(r"[^\w\s]", "", raw).lower()
     resp = MessagingResponse()
     user = users.find_one({"number": num})
 
-    # — Reset on greetings/menu —
+    # — reset on greetings/menu —
     if any(kw in txt for kw in ("hi","hello","menu","start")):
-        users.update_one(
-            {"number":num},
-            {"$set":{"status":"main","cart":[]}}
-        , upsert=True)
+        users.update_one({"number":num},{"$set":{"status":"main","cart":[]}}, upsert=True)
         m = resp.message(BOT_TEXT["main_menu"])
         m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
         return str(resp)
 
-    # — New user → main menu —
+    # — new user →
     if not user:
         m = resp.message(BOT_TEXT["main_menu"])
         m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
-        users.insert_one({
-            "number": num,
-            "status": "main",
-            "browse_index": 0,
-            "cart": [],
-            "messages": []
-        })
+        users.insert_one({"number":num,"status":"main","browse_index":0,"cart":[],"messages":[]})
         return str(resp)
 
-    # — MAIN MENU —
+    # — main menu —
     if user["status"] == "main":
         if txt == "1":
             resp.message(BOT_TEXT["prompt_contact"])
         elif txt == "2":
-            users.update_one(
-                {"number":num},
-                {"$set":{"status":"browsing","browse_index":0,"cart":[]}}
-            )
+            users.update_one({"number":num},{"$set":{"status":"browsing","browse_index":0,"cart":[]}})
             resp.message(BOT_TEXT["ordering_mode"])
             return send_product(resp, 0)
         elif txt == "3":
@@ -153,7 +103,7 @@ def reply():
             resp.message(BOT_TEXT["invalid"])
         return str(resp)
 
-    # — BROWSING MODE —
+    # — browsing products —
     if user["status"] == "browsing":
         idx = user.get("browse_index", 0)
         if "next" in txt:
@@ -162,22 +112,19 @@ def reply():
             idx = (idx - 1) % len(PRODUCTS)
         elif "add" in txt:
             name = PRODUCTS[idx]["name"]
-            users.update_one(
-                {"number":num},
-                {"$push":{"cart":name},"$set":{"status":"ask_more"}}
-            )
+            users.update_one({"number":num},{"$push":{"cart":name},"$set":{"status":"ask_more"}})
             cart = user.get("cart", []) + [name]
             resp.message(f"✅ *{name}* added to your cart.")
             resp.message(BOT_TEXT["ask_more"].format(cart=", ".join(cart)))
             return str(resp)
         else:
-            resp.message("Type ◀Previous, Next▶ or Add.")
+            resp.message("Type ◀Previous  Next▶ or Add.")
             return str(resp)
 
         users.update_one({"number":num},{"$set":{"browse_index":idx}})
         return send_product(resp, idx)
 
-    # — ASK_MORE: anything else? —
+    # — anything else? —
     if user["status"] == "ask_more":
         if txt in ("1", "yes"):
             users.update_one({"number":num},{"$set":{"status":"browsing"}})
@@ -189,33 +136,22 @@ def reply():
             resp.message(BOT_TEXT["invalid"])
         return str(resp)
 
-    # — ADDRESS COLLECTION —
+    # — address collection —
     if user["status"] == "address":
         cart = user.get("cart", [])
         resp.message(BOT_TEXT["thank_you"])
-        orders.insert_one({
-            "number": num,
-            "items":  cart,
-            "address": raw,
-            "time":    datetime.now(timezone.utc)
-        })
-        users.update_one(
-            {"number":num},
-            {"$set":{"status":"ordered","cart":[]}}
-        )
+        orders.insert_one({"number":num,"items":cart,"address":raw,"time":datetime.now(timezone.utc)})
+        users.update_one({"number":num},{"$set":{"status":"ordered","cart":[]}})
         return str(resp)
 
-    # — AFTER ORDERED → next steps —
+    # — after ordered —
     if user["status"] == "ordered":
         resp.message(BOT_TEXT["next_steps"])
         users.update_one({"number":num},{"$set":{"status":"main"}})
         return str(resp)
 
-    # — fallback: log everything —
-    users.update_one(
-        {"number":num},
-        {"$push":{"messages":{"text":raw,"date":datetime.now(timezone.utc)}}}
-    )
+    # — fallback log —
+    users.update_one({"number":num},{"$push":{"messages":{"text":raw,"date":datetime.now(timezone.utc)}}})
     return str(resp)
   
 if __name__ == "__main__":

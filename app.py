@@ -41,7 +41,7 @@ orders = db["orders"]
 
 app = Flask(__name__)
 
-# ─── HELPER: send product #idx with explicit media call ──────────────
+# ─── HELPER: send product #idx explicitly ───────────────────────────
 def send_product(resp, idx):
     if idx == 0:
         msg = resp.message()
@@ -208,10 +208,10 @@ def reply():
 
     # — ASK_MORE: anything else? —
     if user["status"] == "ask_more":
-        if txt == "1":
+        if txt in ("1", "yes"):
             users.update_one({"number":num},{"$set":{"status":"browsing"}})
             return send_product(resp, user["browse_index"])
-        elif txt == "2":
+        elif txt in ("2", "no"):
             users.update_one({"number":num},{"$set":{"status":"address"}})
             resp.message(BOT_TEXT["ask_address"])
         else:

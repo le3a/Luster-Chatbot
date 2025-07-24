@@ -31,6 +31,55 @@ BOT_TEXT = {
     "address":       "We’re at *04 BP 1041 Abidjan 04, Abidjan, Côte d’Ivoire*",
 }
 
+# ─── PRODUCT CATALOG ───────────────────────────────────────────────
+PRODUCTS = [
+    {
+        "name":  "Roasted Coffee Bar",
+        "price": "$2.99",
+        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-coffee-bar.jpg"
+    },
+    {
+        "name":  "Roasted Cocoa Bar",
+        "price": "$2.99",
+        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-cocoa-bar.jpg"
+    },
+    {
+        "name":  "Ginger Chocolate Bar",
+        "price": "$2.99",
+        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/ginger-chocolate-bar.jpg"
+    },
+    {
+        "name":  "Cocoa Nibs Bar",
+        "price": "$2.99",
+        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-bar.jpg"
+    },
+    {
+        "name":  "Cocoa Butter",
+        "price": "$12.00–$24.00",
+        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-butter.jpg"
+    },
+    {
+        "name":  "Cashews in Dark Chocolate",
+        "price": "$7.00–$27.00",
+        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cashews-dark-chocolate.jpg"
+    },
+    {
+        "name":  "Cocoa Nibs (Pouch)",
+        "price": "$11.50–$22.00",
+        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-pouch.jpg"
+    },
+    {
+        "name":  "Cocoa Beans",
+        "price": "$7.00",
+        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-beans.jpg"
+    },
+    {
+        "name":  "Cocoa Powder",
+        "price": "$7.00–$17.00",
+        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-powder.jpg"
+    },
+]
+
 # ─── MONGO SETUP ─────────────────────────────────────────────────────
 cluster = MongoClient(
     "mongodb+srv://luster:luster@cluster0.kl9tztu.mongodb.net/?retryWrites=true&w=majority"
@@ -41,89 +90,16 @@ orders = db["orders"]
 
 app = Flask(__name__)
 
-# ─── HELPER: send product #idx explicitly ───────────────────────────
+# ─── HELPER: send one message with image + text ────────────────────
 def send_product(resp, idx):
-    if idx == 0:
-        msg = resp.message()
-        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-coffee-bar.jpg")
-        resp.message(
-            "*Roasted Coffee Bar*\n"
-            "------------------\n"
-            "$2.99\n\n"
-            "◀Previous  Next▶"
-        )
-    elif idx == 1:
-        msg = resp.message()
-        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-cocoa-bar.jpg")
-        resp.message(
-            "*Roasted Cocoa Bar*\n"
-            "------------------\n"
-            "$2.99\n\n"
-            "◀Previous  Next▶"
-        )
-    elif idx == 2:
-        msg = resp.message()
-        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/ginger-chocolate-bar.jpg")
-        resp.message(
-            "*Ginger Chocolate Bar*\n"
-            "------------------\n"
-            "$2.99\n\n"
-            "◀Previous  Next▶"
-        )
-    elif idx == 3:
-        msg = resp.message()
-        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-bar.jpg")
-        resp.message(
-            "*Cocoa Nibs Bar*\n"
-            "------------------\n"
-            "$2.99\n\n"
-            "◀Previous  Next▶"
-        )
-    elif idx == 4:
-        msg = resp.message()
-        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-butter.jpg")
-        resp.message(
-            "*Cocoa Butter*\n"
-            "------------------\n"
-            "$12.00–$24.00\n\n"
-            "◀Previous  Next▶"
-        )
-    elif idx == 5:
-        msg = resp.message()
-        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cashews-dark-chocolate.jpg")
-        resp.message(
-            "*Cashews in Dark Chocolate*\n"
-            "------------------\n"
-            "$7.00–$27.00\n\n"
-            "◀Previous  Next▶"
-        )
-    elif idx == 6:
-        msg = resp.message()
-        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-pouch.jpg")
-        resp.message(
-            "*Cocoa Nibs (Pouch)*\n"
-            "------------------\n"
-            "$11.50–$22.00\n\n"
-            "◀Previous  Next▶"
-        )
-    elif idx == 7:
-        msg = resp.message()
-        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-beans.jpg")
-        resp.message(
-            "*Cocoa Beans*\n"
-            "------------------\n"
-            "$7.00\n\n"
-            "◀Previous  Next▶"
-        )
-    elif idx == 8:
-        msg = resp.message()
-        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-powder.jpg")
-        resp.message(
-            "*Cocoa Powder*\n"
-            "------------------\n"
-            "$7.00–$17.00\n\n"
-            "◀Previous  Next▶"
-        )
+    p = PRODUCTS[idx]
+    msg = resp.message(
+        f"*{p['name']}*\n"
+        "------------------\n"
+        f"{p['price']}\n\n"
+        "◀Previous  Next▶"
+    )
+    msg.media(p["image"])
     return str(resp)
 
 # ─── MAIN ROUTE ───────────────────────────────────────────────────────
@@ -181,22 +157,17 @@ def reply():
     if user["status"] == "browsing":
         idx = user.get("browse_index", 0)
         if "next" in txt:
-            idx = (idx + 1) % 9
+            idx = (idx + 1) % len(PRODUCTS)
         elif "prev" in txt or "previous" in txt:
-            idx = (idx - 1) % 9
+            idx = (idx - 1) % len(PRODUCTS)
         elif "add" in txt:
-            names = [
-                "Roasted Coffee Bar","Roasted Cocoa Bar","Ginger Chocolate Bar",
-                "Cocoa Nibs Bar","Cocoa Butter","Cashews in Dark Chocolate",
-                "Cocoa Nibs (Pouch)","Cocoa Beans","Cocoa Powder"
-            ]
-            p_name = names[idx]
+            name = PRODUCTS[idx]["name"]
             users.update_one(
                 {"number":num},
-                {"$push":{"cart":p_name},"$set":{"status":"ask_more"}}
+                {"$push":{"cart":name},"$set":{"status":"ask_more"}}
             )
-            cart = user.get("cart", []) + [p_name]
-            resp.message(f"✅ *{p_name}* added to your cart.")
+            cart = user.get("cart", []) + [name]
+            resp.message(f"✅ *{name}* added to your cart.")
             resp.message(BOT_TEXT["ask_more"].format(cart=", ".join(cart)))
             return str(resp)
         else:

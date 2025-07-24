@@ -5,7 +5,7 @@ from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
 from pymongo import MongoClient
 
-# ─── BOT TEXT ─────────────────────────────────────────────────────
+# ─── BOT TEXT ───────────────────────────────────────────────────────
 BOT_TEXT = {
     "main_menu": (
         "Hi, thanks for contacting *Luster Chocolate*.\n"
@@ -16,7 +16,7 @@ BOT_TEXT = {
     ),
     "invalid":       "Please enter a valid option.",
     "prompt_contact":"📞 +225 07 88 04 67 36 / +225 01 40 45 44 40\n✉️ info@lusterchocolate.com",
-    "ordering_mode": "You have entered *ordering mode*.\nUse *Next*/*Prev* to browse or *Add* to select.",
+    "ordering_mode": "You have entered *ordering mode*.\nUse ◀Previous or Next▶ to browse or type Add to select.",
     "ask_more":      "🛒 In cart: {cart}\nAnything else? 1️⃣ Yes 2️⃣ No",
     "ask_address":   "Please reply with your delivery address to confirm.",
     "thank_you":     "Thank you! 😊 Your order will arrive within the next hour.",
@@ -31,20 +31,20 @@ BOT_TEXT = {
     "address":       "We’re at *04 BP 1041 Abidjan 04, Abidjan, Côte d’Ivoire*",
 }
 
-# ─── PRODUCT CATALOG ──────────────────────────────────────────────
+# ─── PRODUCT CATALOG ───────────────────────────────────────────────
 PRODUCT_LIST = [
-    {"name":"Roasted Coffee Bar",         "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-coffee-bar.jpg"},
-    {"name":"Roasted Cocoa Bar",          "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-cocoa-bar.jpg"},
-    {"name":"Ginger Chocolate Bar",       "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/ginger-chocolate-bar.jpg"},
-    {"name":"Cocoa Nibs Bar",             "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-bar.jpg"},
-    {"name":"Cocoa Butter",               "price":"$12.00–$24.00", "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-butter.jpg"},
-    {"name":"Cashews in Dark Chocolate",  "price":"$7.00–$27.00",  "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cashews-dark-chocolate.jpg"},
-    {"name":"Cocoa Nibs (Pouch)",         "price":"$11.50–$22.00","image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-pouch.jpg"},
-    {"name":"Cocoa Beans",                "price":"$7.00",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-beans.jpg"},
-    {"name":"Cocoa Powder",               "price":"$7.00–$17.00", "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-powder.jpg"},
+    {"name":"Roasted Coffee Bar",        "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-coffee-bar.jpg"},
+    {"name":"Roasted Cocoa Bar",         "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-cocoa-bar.jpg"},
+    {"name":"Ginger Chocolate Bar",      "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/ginger-chocolate-bar.jpg"},
+    {"name":"Cocoa Nibs Bar",            "price":"$2.99",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-bar.jpg"},
+    {"name":"Cocoa Butter",              "price":"$12.00–$24.00", "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-butter.jpg"},
+    {"name":"Cashews in Dark Chocolate", "price":"$7.00–$27.00",  "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cashews-dark-chocolate.jpg"},
+    {"name":"Cocoa Nibs (Pouch)",        "price":"$11.50–$22.00","image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-pouch.jpg"},
+    {"name":"Cocoa Beans",               "price":"$7.00",         "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-beans.jpg"},
+    {"name":"Cocoa Powder",              "price":"$7.00–$17.00", "image":"https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-powder.jpg"},
 ]
 
-# ─── MONGO SETUP ───────────────────────────────────────────────────
+# ─── MONGO SETUP ─────────────────────────────────────────────────────
 cluster = MongoClient(
     "mongodb+srv://luster:luster@cluster0.kl9tztu.mongodb.net/?retryWrites=true&w=majority"
 )
@@ -54,20 +54,22 @@ orders = db["orders"]
 
 app = Flask(__name__)
 
-# ─── HELPER: send the current PRODUCT_LIST[browse_index] ───────────
+# ─── HELPER: send the current product with media, title, divider, price, controls
 def send_product(resp, idx):
     p = PRODUCT_LIST[idx]
-    m1 = resp.message()
-    m1.media(p["image"])
+    # 1) Send the image as media
+    msg = resp.message()
+    msg.media(p["image"])
+    # 2) Send the caption below it
     resp.message(
         f"*{p['name']}*\n"
+        "------------------\n"
         f"{p['price']}\n\n"
-        "Type *Add* to add to cart\n"
-        "*Prev* *Next* to browse"
+        "◀Previous  Next▶"
     )
     return str(resp)
 
-# ─── ROUTE ─────────────────────────────────────────────────────────
+# ─── MAIN ROUTE ───────────────────────────────────────────────────────
 @app.route("/", methods=["GET","POST"])
 def reply():
     raw = request.form.get("Body","").strip()
@@ -104,7 +106,6 @@ def reply():
         if txt == "1":
             resp.message(BOT_TEXT["prompt_contact"])
         elif txt == "2":
-            # go into browsing
             users.update_one(
                 {"number":num},
                 {"$set":{"status":"browsing","browse_index":0,"cart":[]}}
@@ -124,34 +125,32 @@ def reply():
         idx = user.get("browse_index", 0)
         if "next" in txt:
             idx = (idx + 1) % len(PRODUCT_LIST)
-        elif "prev" in txt:
+        elif "prev" in txt or "previous" in txt:
             idx = (idx - 1) % len(PRODUCT_LIST)
         elif "add" in txt:
-            # add to cart & ask if they want more
-            p = PRODUCT_LIST[idx]["name"]
+            p_name = PRODUCT_LIST[idx]["name"]
             users.update_one(
                 {"number":num},
-                {"$push":{"cart":p},"$set":{"status":"ask_more"}}
+                {"$push":{"cart":p_name},"$set":{"status":"ask_more"}}
             )
-            cart = user.get("cart", []) + [p]
-            resp.message(f"✅ *{p}* added to your cart.")
+            cart = user.get("cart", []) + [p_name]
+            resp.message(f"✅ *{p_name}* added to your cart.")
             resp.message(BOT_TEXT["ask_more"].format(cart=", ".join(cart)))
             return str(resp)
         else:
-            resp.message("Type *Next*, *Prev*, or *Add*.")
+            resp.message("Type ◀Previous, Next▶ or Add.")
             return str(resp)
 
         # update index & show product
         users.update_one({"number":num},{"$set":{"browse_index":idx}})
         return send_product(resp, idx)
 
-    # — ANYTHING ELSE? —
+    # — ASK_MORE: anything else? —
     if user["status"] == "ask_more":
-        if txt == "1":  # yes
+        if txt == "1":
             users.update_one({"number":num},{"$set":{"status":"browsing"}})
-            # show current product again
             return send_product(resp, user["browse_index"])
-        elif txt == "2":  # no
+        elif txt == "2":
             users.update_one({"number":num},{"$set":{"status":"address"}})
             resp.message(BOT_TEXT["ask_address"])
         else:
@@ -180,7 +179,7 @@ def reply():
         users.update_one({"number":num},{"$set":{"status":"main"}})
         return str(resp)
 
-    # — fallback: log message —
+    # — fallback: log everything —
     users.update_one(
         {"number":num},
         {"$push":{"messages":{"text":raw,"date":datetime.now(timezone.utc)}}}

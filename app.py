@@ -1,20 +1,50 @@
-import os
-import re
-from dotenv import load_dotenv      # pip install python-dotenv
 from flask import Flask, request
-from pymongo import MongoClient
 from twilio.twiml.messaging_response import MessagingResponse
-from twilio.rest import Client
+from pymongo import MongoClient
 from datetime import datetime, timezone
+import re
+import os
 
-# ─── CONFIGURATION ──────────────────────────────────────────────
-load_dotenv()
+# ─── BOT TEXT ─────────────────────────────────────────────────────
+BOT_TEXT = {
+    "main_menu": (
+        "Hi, thanks for contacting *Luster Chocolate*.\n"
+        "1️⃣ Contact us\n"
+        "2️⃣ Order products\n"
+        "3️⃣ Working hours\n"
+        "4️⃣ Address"
+    ),
+    "invalid":       "Please enter a valid option.",
+    "prompt_contact":"📞 +225 07 88 04 67 36 / +225 01 40 45 44 40\n✉️ info@lusterchocolate.com",
+    "ordering_mode": "You have entered *ordering mode*.",
+    "order_list": (
+        "Please choose a product:\n"
+        "1️⃣ Roasted Coffee Bar\n"
+        "2️⃣ Roasted Cocoa Bar\n"
+        "3️⃣ Ginger Chocolate Bar\n"
+        "4️⃣ Cocoa Nibs Bar\n"
+        "5️⃣ Cocoa Butter\n"
+        "6️⃣ Cashews in Dark Chocolate\n"
+        "7️⃣ Cocoa Nibs (Pouch)\n"
+        "8️⃣ Cocoa Beans\n"
+        "9️⃣ Cocoa Powder"
+    ),
+    "ask_more":      "🛒 In cart: {cart}\nAnything else? 1️⃣ Yes 2️⃣ No",
+    "ask_address":   "Please reply with your delivery address to confirm.",
+    "thank_you":     "Thank you! 😊 Your order will arrive within the next hour.",
+    "next_steps": (
+        "What would you like next?\n"
+        "1️⃣ Contact us\n"
+        "2️⃣ Another order\n"
+        "3️⃣ Working hours\n"
+        "4️⃣ Address"
+    ),
+    "hours":         "Our working hours are *9 a.m. to 5 p.m.*, Monday–Friday.",
+    "address":       "We’re at *04 BP 1041 Abidjan 04, Abidjan, Côte d’Ivoire*",
+}
+# ────────────────────────────────────────────────────────────────────
 
-account_sid     = os.environ["TWILIO_ACCOUNT_SID"]
-auth_token      = os.environ["TWILIO_AUTH_TOKEN"]
-whatsapp_number = os.environ["TWILIO_WHATSAPP_NUMBER"]  # e.g. "+1415XXXXXXX"
-twilio_client   = Client(account_sid, auth_token)
-
+# ─── MONGODB SETUP ─────────────────────────────────────────────────
 cluster = MongoClient(
     "mongodb+srv://luster:luster@cluster0.kl9tztu.mongodb.net/"
     "?retryWrites=true&w=majority"
@@ -22,173 +52,126 @@ cluster = MongoClient(
 db     = cluster["Chocolate_boutique"]
 users  = db["users"]
 orders = db["orders"]
+# ────────────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
 
-# ─── BOT TEXT ───────────────────────────────────────────────────
-BOT_TEXT = {
-    "main_menu": (
-        "Hi, welcome to *Luster Chocolate*!\n"
-        "Choose an option:\n\n"
-        "1️⃣ Contact us\n"
-        "2️⃣ Order products\n"
-        "3️⃣ Working hours\n"
-        "4️⃣ Address"
-    ),
-    "invalid":      "Please enter a valid option.",
-    "prompt_contact": "📞 +225 07 88 04 67 36 / +225 01 40 45 44 40\n✉️ info@lusterchocolate.com",
-    "hours":        "Our working hours: *9 a.m. – 5 p.m.*, Mon–Fri.",
-    "address":      "We’re at *04 BP 1041 Abidjan 04, Côte d’Ivoire*",
-    "ordering_mode":"You have entered *ordering mode*.\nUse *Next* or *Prev* to browse.",
-    "thank_you":    "Thank you! 😊 Your order is on its way.",
-    "next_steps": (
-        "What would you like next?\n"
-        "1️⃣ Contact\n"
-        "2️⃣ Another order\n"
-        "3️⃣ Hours\n"
-        "4️⃣ Address"
-    )
-}
-
-# ─── PRODUCT CATALOG ────────────────────────────────────────────
-PRODUCT_LIST = [
-    {
-        "name":  "Roasted Coffee Bar",
-        "price": "$2.99",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-coffee-bar.jpg"
-    },
-    {
-        "name":  "Roasted Cocoa Bar",
-        "price": "$2.99",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/roasted-cocoa-bar.jpg"
-    },
-    {
-        "name":  "Ginger Chocolate Bar",
-        "price": "$2.99",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/ginger-chocolate-bar.jpg"
-    },
-    {
-        "name":  "Cocoa Nibs Bar",
-        "price": "$2.99",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-bar.jpg"
-    },
-    {
-        "name":  "Cocoa Butter",
-        "price": "$12.00–$24.00",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-butter.jpg"
-    },
-    {
-        "name":  "Cashews in Dark Chocolate",
-        "price": "$7.00–$27.00",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cashews-dark-chocolate.jpg"
-    },
-    {
-        "name":  "Cocoa Nibs (Pouch)",
-        "price": "$11.50–$22.00",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-pouch.jpg"
-    },
-    {
-        "name":  "Cocoa Beans",
-        "price": "$7.00",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-beans.jpg"
-    },
-    {
-        "name":  "Cocoa Powder",
-        "price": "$7.00–$17.00",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-powder.jpg"
-    },
-]
-
-# ─── HELPER to send current product ────────────────────────────
-def send_current_product(resp, browse_index):
-    p = PRODUCT_LIST[browse_index]
-    m1 = resp.message()               # media message
-    m1.media(p["image"])
-    # text with title, price, and controls
-    resp.message(
-        f"*{p['name']}*\n"
-        f"{p['price']}\n\n"
-        "< Prev  |  Next >"
-    )
-    return str(resp)
-
-
-# ─── MAIN REPLY HANDLER ────────────────────────────────────────
 @app.route("/", methods=["GET","POST"])
 def reply():
-    raw     = request.form.get("Body","").strip()
-    number  = request.form.get("From","").replace("whatsapp:","")
-    normalized = raw.lower()
-    resp    = MessagingResponse()
-    user    = users.find_one({"number": number})
+    raw       = request.form.get("Body","").strip()
+    num       = request.form.get("From","").replace("whatsapp:","")
+    txt       = re.sub(r'[^\w\s]', '', raw).lower()
+    resp      = MessagingResponse()
+    user      = users.find_one({"number": num})
 
-    # — RESET on greetings/menu
-    if any(k in normalized for k in ("hi","hello","menu","start")):
+    # ─── Reset on greetings/menu keywords ──────────────────────────
+    if any(k in txt for k in ("hi","hello","menu","start")):
         users.update_one(
-            {"number":number},
-            {"$set":{"status":"main"}},
+            {"number":num},
+            {"$set":{"status":"main","cart":[]}},
             upsert=True
         )
         msg = resp.message(BOT_TEXT["main_menu"])
         msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
         return str(resp)
 
-    # — NEW USER → show main menu
+    # ─── New user → main menu ──────────────────────────────────────
     if user is None:
         msg = resp.message(BOT_TEXT["main_menu"])
         msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
         users.insert_one({
-            "number": number,
+            "number": num,
             "status": "main",
-            "browse_index": 0,
-            "cart": [],
+            "cart":   [],
             "messages": []
         })
         return str(resp)
 
-    # — MAIN MENU logic —
+    # ─── MAIN MENU logic ───────────────────────────────────────────
     if user["status"] == "main":
-        # only accept 1–4
-        if normalized == "1":
+        if txt == "1":
             resp.message(BOT_TEXT["prompt_contact"])
-        elif normalized == "2":
-            # enter browsing mode
+        elif txt == "2":
             resp.message(BOT_TEXT["ordering_mode"])
             users.update_one(
-                {"number":number},
-                {"$set":{"status":"browsing","browse_index":0}}
+                {"number":num},
+                {"$set":{"status":"ordering","cart":[]}}
             )
-            return send_current_product(resp, 0)
-        elif normalized == "3":
+            resp.message(BOT_TEXT["order_list"])
+        elif txt == "3":
             resp.message(BOT_TEXT["hours"])
-        elif normalized == "4":
+        elif txt == "4":
             resp.message(BOT_TEXT["address"])
         else:
             resp.message(BOT_TEXT["invalid"])
         return str(resp)
 
-    # — BROWSING MODE —
-    if user["status"] == "browsing":
-        idx = user.get("browse_index", 0)
-        if "next" in normalized:
-            idx = (idx + 1) % len(PRODUCT_LIST)
-        elif "prev" in normalized or "previous" in normalized:
-            idx = (idx - 1) % len(PRODUCT_LIST)
-        else:
-            # prompt correct usage
-            resp.message("Type *Next* or *Prev* to browse.")
+    # ─── ORDERING: select items ────────────────────────────────────
+    if user["status"] == "ordering":
+        try:
+            choice = int(txt)
+        except ValueError:
+            resp.message(BOT_TEXT["invalid"])
             return str(resp)
 
-        # save new index & show product
-        users.update_one({"number":number},{"$set":{"browse_index":idx}})
-        return send_current_product(resp, idx)
+        if 1 <= choice <= 9:
+            products = [
+                "Roasted Coffee Bar","Roasted Cocoa Bar","Ginger Chocolate Bar",
+                "Cocoa Nibs Bar","Cocoa Butter","Cashews in Dark Chocolate",
+                "Cocoa Nibs (Pouch)","Cocoa Beans","Cocoa Powder"
+            ]
+            selected = products[choice-1]
+            # add to cart & ask if more
+            users.update_one(
+                {"number":num},
+                {"$push":{"cart":selected},"$set":{"status":"ask_more"}}
+            )
+            cart = user.get("cart",[]) + [selected]
+            resp.message(f"✅ *{selected}* added to your cart.")
+            resp.message(BOT_TEXT["ask_more"].format(cart=", ".join(cart)))
+        else:
+            resp.message(BOT_TEXT["invalid"])
+        return str(resp)
 
-    # — LOG everything else —
+    # ─── ASK_MORE: anything else? ──────────────────────────────────
+    if user["status"] == "ask_more":
+        if txt == "1":  # yes
+            users.update_one({"number":num},{"$set":{"status":"ordering"}}) 
+            resp.message(BOT_TEXT["order_list"])
+        elif txt == "2":  # no
+            users.update_one({"number":num},{"$set":{"status":"address"}})
+            resp.message(BOT_TEXT["ask_address"])
+        else:
+            resp.message(BOT_TEXT["invalid"])
+        return str(resp)
+
+    # ─── ADDRESS COLLECTION ────────────────────────────────────────
+    if user["status"] == "address":
+        cart = user.get("cart",[])
+        resp.message(BOT_TEXT["thank_you"])
+        orders.insert_one({
+            "number": num,
+            "items":  cart,
+            "address": raw,
+            "time":    datetime.now(timezone.utc)
+        })
+        users.update_one({"number":num},{"$set":{"status":"ordered","cart":[]}})
+        return str(resp)
+
+    # ─── AFTER ORDERED → next steps ────────────────────────────────
+    if user["status"] == "ordered":
+        resp.message(BOT_TEXT["next_steps"])
+        users.update_one({"number":num},{"$set":{"status":"main"}})
+        return str(resp)
+
+    # ─── Log everything else ────────────────────────────────────────
     users.update_one(
-        {"number":number},
+        {"number":num},
         {"$push":{"messages":{"text":raw,"date":datetime.now(timezone.utc)}}}
     )
     return str(resp)
     
 if __name__ == "__main__":
-    app.run()  
+    # Heroku always provides PORT in the environment
+    port = int(os.environ["PORT"])
+    app.run(host="0.0.0.0", port=port)

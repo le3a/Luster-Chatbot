@@ -217,8 +217,8 @@ def send_product(resp, idx):
             f"_Product {idx + 1} of {len(PRODUCTS)}_"
         )
         
-        m = resp.message(message)
-        m.media(product['image'])
+        msg = resp.message(message)
+        msg.media(product['image'])
     else:
         resp.message("❌ Product not found. Type *back* to return to menu.")
     return str(resp)
@@ -276,14 +276,14 @@ def reply():
             {"$set": {"status": "main", "cart": [], "browse_index": 0}},
             upsert=True
         )
-        m = resp.message(BOT_TEXT["main_menu"])
-        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
+        msg = resp.message(BOT_TEXT["main_menu"])
+        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
         return str(resp)
 
     # ─── NEW USER ───
     if not user:
-        m = resp.message(BOT_TEXT["main_menu"])
-        m.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
+        msg = resp.message(BOT_TEXT["main_menu"])
+        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
         users.insert_one({
             "number": num,
             "status": "main",
@@ -310,7 +310,8 @@ def reply():
             if cart:
                 cart_display = format_cart_display(cart)
                 total = calculate_cart_total(cart)
-                resp.message(BOT_TEXT["cart_view"].format(cart_items=cart_display, total=total))
+                cart_view_msg = BOT_TEXT["cart_view"].format(cart_items=cart_display, total=total)
+                resp.message(cart_view_msg)
                 users.update_one({"number": num}, {"$set": {"status": "cart_view"}})
             else:
                 resp.message(BOT_TEXT["cart_empty"])
@@ -337,7 +338,8 @@ def reply():
                 {"number": num},
                 {"$push": {"cart": product_name}}
             )
-            resp.message(BOT_TEXT["cart_added"].format(product=product_name))
+            cart_msg = BOT_TEXT["cart_added"].format(product=product_name)
+            resp.message(cart_msg)
             return send_product(resp, idx)
         elif "done" in txt:
             cart = user.get("cart", [])
@@ -357,7 +359,7 @@ def reply():
         else:
             resp.message("Use: ◀️*Previous* | *Next*▶️ | *Add* | *Done* | *Back*")
             return send_product(resp, idx)
-        return str(resp)
+            return str(resp)
 
     # ─── CART VIEW ───
     if user["status"] == "cart_view":
@@ -375,7 +377,7 @@ def reply():
             resp.message(BOT_TEXT["main_menu"])
         else:
             resp.message(BOT_TEXT["invalid"])
-        return str(resp)
+            return str(resp)
 
     # ─── CART EMPTY ───
     if user["status"] == "cart_empty":
@@ -400,7 +402,8 @@ def reply():
             {"number": num}, 
             {"$set": {"status": "payment", "address": raw}}
         )
-        resp.message(BOT_TEXT["payment_options"].format(total=total))
+        payment_msg = BOT_TEXT["payment_options"].format(total=total)
+        resp.message(payment_msg)
         return str(resp)
 
     # ─── PAYMENT SELECTION ───
@@ -415,7 +418,8 @@ def reply():
                 {"number": num}, 
                 {"$set": {"status": "awaiting_orange_payment", "payment_ref": payment_ref}}
             )
-            resp.message(BOT_TEXT["payment_orange"].format(amount=total, payment_ref=payment_ref))
+            orange_msg = BOT_TEXT["payment_orange"].format(amount=total, payment_ref=payment_ref)
+            resp.message(orange_msg)
             
             # Store payment record
             payments.insert_one({
@@ -433,7 +437,8 @@ def reply():
                 {"number": num}, 
                 {"$set": {"status": "awaiting_wave_payment", "payment_ref": payment_ref}}
             )
-            resp.message(BOT_TEXT["payment_wave"].format(amount=total, payment_ref=payment_ref))
+            wave_msg = BOT_TEXT["payment_wave"].format(amount=total, payment_ref=payment_ref)
+            resp.message(wave_msg)
             
             # Store payment record
             payments.insert_one({
@@ -461,7 +466,8 @@ def reply():
             })
             
             users.update_one({"number": num}, {"$set": {"status": "ordered", "cart": []}})
-            resp.message(BOT_TEXT["payment_cod"].format(amount=total, order_ref=order_ref))
+            cod_msg = BOT_TEXT["payment_cod"].format(amount=total, order_ref=order_ref)
+            resp.message(cod_msg)
         else:
             resp.message("Please select a valid payment option (1, 2, or 3)")
         return str(resp)
@@ -497,7 +503,8 @@ def reply():
             })
             
             users.update_one({"number": num}, {"$set": {"status": "ordered", "cart": []}})
-            resp.message(BOT_TEXT["payment_confirmation"].format(order_ref=order_ref))
+            confirmation_msg = BOT_TEXT["payment_confirmation"].format(order_ref=order_ref)
+            resp.message(confirmation_msg)
         else:
             resp.message("❌ Invalid transaction reference. Please provide your Orange Money transaction reference (minimum 6 characters).")
         return str(resp)
@@ -533,7 +540,8 @@ def reply():
             })
             
             users.update_one({"number": num}, {"$set": {"status": "ordered", "cart": []}})
-            resp.message(BOT_TEXT["payment_confirmation"].format(order_ref=order_ref))
+            wave_confirmation_msg = BOT_TEXT["payment_confirmation"].format(order_ref=order_ref)
+            resp.message(wave_confirmation_msg)
         else:
             resp.message("❌ Invalid Wave transaction ID. Please provide your Wave transaction ID (minimum 6 characters).")
         return str(resp)

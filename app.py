@@ -74,7 +74,7 @@ BOT_TEXT = {
         "📍 *Delivery Information*\n\n"
         "Please provide your complete delivery address:\n"
         "_Include: Name, Street, Area, City, Contact Number_\n\n"
-        "Example: *John Doe, 123 Cocody Street, Abidjan, +225 XX XX XX XX*"
+        "Example: *John Doe, 123 Cocody Street, Abidjan, +225 XX XX XX XX*"  # Cocody is a district in Abidjan
     ),
     "payment_options": (
         "💳 *Choose Payment Method*\n\n"
@@ -131,60 +131,60 @@ PRODUCTS = [
     {
         "name": "Roasted Coffee Dark Chocolate Bar",
         "price": 8.99,
-        "description": "70% Ivorian dark chocolate infused with locally roasted coffee beans. A bold, aromatic experience that celebrates the rich flavors of Côte d'Ivoire.",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/coffee-bar.jpg"
+        "description": "70% Ivorian dark chocolate infused with locally roasted coffee beans. A bold, aromatic experience that celebrates the rich flavors of Côte d'Ivoire. Made from sustainably sourced cacao beans grown in the heart of Africa's cocoa region.",
+        "image": "https://images.unsplash.com/photo-1610450949065-1f2841536c88?w=800&h=600&fit=crop"
     },
     {
         "name": "Premium Cocoa Bar (70%)",
         "price": 9.99,
-        "description": "Our signature 70% dark chocolate bar made from slow-roasted Ivorian cacao beans. Pure, intense chocolate flavor with hints of tropical fruit.",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-bar.jpg"
+        "description": "Our signature 70% dark chocolate bar made from slow-roasted Ivorian cacao beans. Pure, intense chocolate flavor with hints of tropical fruit and earthy undertones. Each bar represents hours of careful craftsmanship from bean to bar.",
+        "image": "https://images.unsplash.com/photo-1511381939415-e44015466834?w=800&h=600&fit=crop"
     },
     {
         "name": "Ginger Spice Chocolate Bar",
         "price": 8.99,
-        "description": "Dark chocolate meets crystallized ginger for a warming, spicy-sweet sensation. Perfect balance of heat and sweetness from local ingredients.",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/ginger-bar.jpg"
+        "description": "Dark chocolate meets crystallized ginger for a warming, spicy-sweet sensation. Perfect balance of heat and sweetness from local ingredients. The ginger adds a delightful zing that complements the rich cocoa perfectly.",
+        "image": "https://images.unsplash.com/photo-1549007953-2f2dc0b24019?w=800&h=600&fit=crop"
     },
     {
         "name": "Cocoa Nibs Dark Chocolate Bar",
         "price": 9.99,
-        "description": "Crunchy roasted cocoa nibs embedded in smooth dark chocolate. Double the cocoa intensity with satisfying texture.",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/nibs-bar.jpg"
+        "description": "Crunchy roasted cocoa nibs embedded in smooth dark chocolate. Double the cocoa intensity with satisfying texture. These roasted nibs provide bursts of pure chocolate flavor and a delightful crunch in every bite.",
+        "image": "https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=800&h=600&fit=crop"
     },
     {
         "name": "Pure Cocoa Butter",
         "price_range": "$15.00 - $35.00",
         "price": 25.00,  # Average price for calculations
-        "description": "Premium food-grade cocoa butter from Ivorian cacao beans. Perfect for baking, cooking, or skincare. Available in 250g and 500g sizes.",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-butter.jpg"
+        "description": "Premium food-grade cocoa butter from Ivorian cacao beans. Perfect for baking, cooking, or skincare. Available in 250g and 500g sizes. This pure, unrefined cocoa butter retains all its natural properties and delicate chocolate aroma.",
+        "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop"
     },
     {
         "name": "Dark Chocolate Covered Cashews",
         "price_range": "$12.00 - $32.00",
         "price": 22.00,  # Average price for calculations
-        "description": "Premium roasted cashews enrobed in our signature dark chocolate. Available in 200g and 500g packages.",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/chocolate-cashews.jpg"
+        "description": "Premium roasted cashews enrobed in our signature dark chocolate. Available in 200g and 500g packages. Each cashew is carefully roasted to perfection before being coated in our smooth, rich chocolate.",
+        "image": "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=800&h=600&fit=crop"
     },
     {
         "name": "Roasted Cocoa Nibs (Premium Pack)",
         "price_range": "$14.00 - $28.00",
         "price": 21.00,  # Average price for calculations
-        "description": "Artisanally roasted cocoa nibs packed with antioxidants. Perfect for smoothies, baking, or healthy snacking. 250g and 500g options.",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-pack.jpg"
+        "description": "Artisanally roasted cocoa nibs packed with antioxidants. Perfect for smoothies, baking, or healthy snacking. 250g and 500g options. These crunchy nibs are pure chocolate essence - intense, slightly bitter, and incredibly nutritious.",
+        "image": "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=800&h=600&fit=crop"
     },
     {
         "name": "Whole Cocoa Beans",
         "price": 10.00,
-        "description": "Premium dried and fermented Ivorian cocoa beans. Perfect for chocolate making enthusiasts or as a unique, nutritious snack.",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-beans.jpg"
+        "description": "Premium dried and fermented Ivorian cocoa beans. Perfect for chocolate making enthusiasts or as a unique, nutritious snack. These beans showcase the terroir of Côte d'Ivoire's finest cacao growing regions.",
+        "image": "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=800&h=600&fit=crop"
     },
     {
         "name": "Artisan Cocoa Powder",
         "price_range": "$11.00 - $24.00",
         "price": 17.50,  # Average price for calculations
-        "description": "Unsweetened, high-fat cocoa powder perfect for baking and hot chocolate. Rich, intense flavor from stone-ground Ivorian beans. 200g and 500g sizes.",
-        "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-powder.jpg"
+        "description": "Unsweetened, high-fat cocoa powder perfect for baking and hot chocolate. Rich, intense flavor from stone-ground Ivorian beans. 200g and 500g sizes. This powder delivers exceptional depth and complexity to any recipe.",
+        "image": "https://images.unsplash.com/photo-1569997685772-0fb9ec1a3c8d?w=800&h=600&fit=crop"
     }
 ]
 
@@ -218,7 +218,10 @@ def send_product(resp, idx):
         )
         
         msg = resp.message(message)
-        msg.media(product['image'])
+        try:
+            msg.media(product['image'])
+        except Exception as e:
+            print(f"Error attaching image for {product['name']}: {e}")
     else:
         resp.message("❌ Product not found. Type *back* to return to menu.")
     return str(resp)
@@ -359,7 +362,6 @@ def reply():
         else:
             resp.message("Use: ◀️*Previous* | *Next*▶️ | *Add* | *Done* | *Back*")
             return send_product(resp, idx)
-            return str(resp)
 
     # ─── CART VIEW ───
     if user["status"] == "cart_view":
@@ -572,7 +574,7 @@ def reply():
     )
     resp.message("Sorry, I didn't understand. Type *menu* to see options.")
     return str(resp)
-  
+
 if __name__ == "__main__":
     # Heroku always provides PORT in the environment
     port = int(os.environ["PORT"])

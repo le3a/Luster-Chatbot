@@ -204,7 +204,16 @@ def send_product(resp, idx):
         product = PRODUCTS[idx]
         price_text = f"${product['price']}" if 'price' in product else product['price_range']
         
+        # Include intro for first product
+        intro_text = ""
+        if idx == 0:
+            intro_text = (
+                f"🍫 *Luster Chocolate Collection* 🍫\n"
+                f"_Handcrafted Excellence from Côte d'Ivoire_\n\n"
+            )
+        
         message = (
+            f"{intro_text}"
             f"🍫 *{product['name']}*\n"
             f"{'─' * 30}\n"
             f"💰 *{price_text}*\n\n"
@@ -300,7 +309,7 @@ def reply():
     if user["status"] == "main":
         if txt == "1":  # Shop Products
             users.update_one({"number": num}, {"$set": {"status": "browsing", "browse_index": 0}})
-            resp.message(BOT_TEXT["browsing_intro"])
+            # Send intro and immediately show first product
             return send_product(resp, 0)
         elif txt == "2":  # Contact
             resp.message(BOT_TEXT["contact_info"])
@@ -385,7 +394,6 @@ def reply():
     if user["status"] == "cart_empty":
         if txt == "1":  # Browse Products
             users.update_one({"number": num}, {"$set": {"status": "browsing", "browse_index": 0}})
-            resp.message(BOT_TEXT["browsing_intro"])
             return send_product(resp, 0)
         elif txt == "2":  # Back to Menu
             users.update_one({"number": num}, {"$set": {"status": "main"}})

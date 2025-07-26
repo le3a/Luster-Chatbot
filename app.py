@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
 from pymongo import MongoClient
+import uuid
 
 # ─── BOT TEXT ───────────────────────────────────────────────────────
 BOT_TEXT = {
@@ -43,12 +44,13 @@ BOT_TEXT = {
         "Côte d'Ivoire\n\n"
         "_Visit us for the freshest chocolate experience!_"
     ),
-    "product_menu": (
-        "🍫 *Luster Chocolate Collection* 🍫\n\n"
-        "Navigate with numbers or use:\n"
+    "browsing_intro": (
+        "🍫 *Luster Chocolate Collection* 🍫\n"
+        "_Handcrafted Excellence from Côte d'Ivoire_\n\n"
+        "📱 *Navigation:*\n"
         "◀️ *Previous* | *Next* ▶️\n"
-        "*Add* to cart | *Back* to menu\n\n"
-        "_Showing product 1 of 9..._"
+        "*Add* to cart | *Done* to checkout\n"
+        "*Back* to main menu\n\n"
     ),
     "cart_added": "✅ *{product}* added to your cart!\n\n",
     "cart_view": (
@@ -71,15 +73,49 @@ BOT_TEXT = {
     "checkout_address": (
         "📍 *Delivery Information*\n\n"
         "Please provide your complete delivery address:\n"
-        "_Include: Name, Street, Area, City, Contact Number_"
+        "_Include: Name, Street, Area, City, Contact Number_\n\n"
+        "Example: *John Doe, 123 Cocody Street, Abidjan, +225 XX XX XX XX*"
     ),
-    "order_confirmation": (
-        "🎉 *Order Confirmed!* 🎉\n\n"
-        "Thank you for choosing Luster Chocolate!\n\n"
-        "📦 Your handcrafted chocolates will be delivered within 1-2 hours.\n"
-        "💳 Payment on delivery\n"
-        "📱 We'll call to confirm before delivery.\n\n"
-        "_Enjoy our tree-to-bar excellence!_"
+    "payment_options": (
+        "💳 *Choose Payment Method*\n\n"
+        "Your Order Total: *${total}*\n\n"
+        "Select your preferred payment option:\n"
+        "1️⃣ Orange Money 🟠\n"
+        "2️⃣ Wave 🌊\n"
+        "3️⃣ Cash on Delivery 💵\n\n"
+        "_All payments are secure and processed instantly_"
+    ),
+    "payment_orange": (
+        "🟠 *Orange Money Payment*\n\n"
+        "💰 Amount: *${amount}*\n"
+        "📱 Please dial: *#144# {amount}#*\n"
+        "💳 Merchant Code: *LUSTER001*\n\n"
+        "After payment, reply with your *transaction reference* to confirm your order.\n\n"
+        "_Payment Reference: {payment_ref}_"
+    ),
+    "payment_wave": (
+        "🌊 *Wave Payment*\n\n"
+        "💰 Amount: *${amount}*\n"
+        "📱 Send payment to: *+225 07 88 04 67 36*\n"
+        "📝 Reference: *LUSTER-{payment_ref}*\n\n"
+        "After payment, reply with your *Wave transaction ID* to confirm your order."
+    ),
+    "payment_cod": (
+        "💵 *Cash on Delivery Selected*\n\n"
+        "💰 Amount to pay: *${amount}*\n"
+        "🚚 Payment will be collected upon delivery\n\n"
+        "Your order is confirmed! We'll deliver within 1-2 hours.\n"
+        "📞 We'll call before delivery.\n\n"
+        "_Order Reference: {order_ref}_"
+    ),
+    "payment_confirmation": (
+        "🎉 *Payment Confirmed!* 🎉\n\n"
+        "✅ Transaction verified\n"
+        "📦 Your handcrafted chocolates are being prepared\n"
+        "🚚 Delivery within 1-2 hours\n"
+        "📞 We'll call before delivery\n\n"
+        "_Order Reference: {order_ref}_\n"
+        "_Thank you for choosing Luster Chocolate!_"
     ),
     "next_steps": (
         "What would you like to do next?\n\n"
@@ -119,18 +155,21 @@ PRODUCTS = [
     {
         "name": "Pure Cocoa Butter",
         "price_range": "$15.00 - $35.00",
+        "price": 25.00,  # Average price for calculations
         "description": "Premium food-grade cocoa butter from Ivorian cacao beans. Perfect for baking, cooking, or skincare. Available in 250g and 500g sizes.",
         "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-butter.jpg"
     },
     {
         "name": "Dark Chocolate Covered Cashews",
         "price_range": "$12.00 - $32.00",
+        "price": 22.00,  # Average price for calculations
         "description": "Premium roasted cashews enrobed in our signature dark chocolate. Available in 200g and 500g packages.",
         "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/chocolate-cashews.jpg"
     },
     {
         "name": "Roasted Cocoa Nibs (Premium Pack)",
         "price_range": "$14.00 - $28.00",
+        "price": 21.00,  # Average price for calculations
         "description": "Artisanally roasted cocoa nibs packed with antioxidants. Perfect for smoothies, baking, or healthy snacking. 250g and 500g options.",
         "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-nibs-pack.jpg"
     },
@@ -143,6 +182,7 @@ PRODUCTS = [
     {
         "name": "Artisan Cocoa Powder",
         "price_range": "$11.00 - $24.00",
+        "price": 17.50,  # Average price for calculations
         "description": "Unsweetened, high-fat cocoa powder perfect for baking and hot chocolate. Rich, intense flavor from stone-ground Ivorian beans. 200g and 500g sizes.",
         "image": "https://lusterchocolate.com/wp-content/uploads/2022/09/cocoa-powder.jpg"
     }
@@ -153,6 +193,7 @@ cluster = MongoClient("mongodb+srv://luster:luster@cluster0.kl9tztu.mongodb.net/
 db = cluster["Chocolate_boutique"]
 users = db["users"]
 orders = db["orders"]
+payments = db["payments"]
 
 app = Flask(__name__)
 
@@ -165,18 +206,21 @@ def send_product(resp, idx):
         
         message = (
             f"🍫 *{product['name']}*\n"
-            f"{'─' * 25}\n"
+            f"{'─' * 30}\n"
             f"💰 *{price_text}*\n\n"
             f"{product['description']}\n\n"
-            f"📱 *Navigation:*\n"
-            f"◀️ Previous | Next ▶️\n"
-            f"Type *Add* to add to cart\n"
-            f"Type *Back* for main menu\n\n"
+            f"📱 *Commands:*\n"
+            f"◀️ *Previous* | *Next* ▶️\n"
+            f"*Add* - Add to cart\n"
+            f"*Done* - Go to checkout\n"
+            f"*Back* - Main menu\n\n"
             f"_Product {idx + 1} of {len(PRODUCTS)}_"
         )
         
         m = resp.message(message)
         m.media(product['image'])
+    else:
+        resp.message("❌ Product not found. Type *back* to return to menu.")
     return str(resp)
 
 def calculate_cart_total(cart_items):
@@ -185,13 +229,7 @@ def calculate_cart_total(cart_items):
     for item in cart_items:
         for product in PRODUCTS:
             if product['name'] == item:
-                if 'price' in product:
-                    total += product['price']
-                else:
-                    # For items with price ranges, use minimum price
-                    price_range = product['price_range'].replace('$', '').replace(' ', '')
-                    min_price = float(price_range.split('-')[0])
-                    total += min_price
+                total += product['price']
                 break
     return round(total, 2)
 
@@ -212,6 +250,15 @@ def format_cart_display(cart_items):
         display_text += f"{i}. {item}\n   {price_text}\n\n"
     
     return display_text.strip()
+
+def generate_payment_reference():
+    """Generate unique payment reference"""
+    return str(uuid.uuid4())[:8].upper()
+
+def generate_order_reference():
+    """Generate unique order reference"""
+    timestamp = datetime.now().strftime("%Y%m%d%H%M")
+    return f"LST-{timestamp}-{str(uuid.uuid4())[:4].upper()}"
 
 # ─── MAIN ROUTE ───────────────────────────────────────────────────────
 @app.route("/", methods=["GET", "POST"])
@@ -250,7 +297,7 @@ def reply():
     if user["status"] == "main":
         if txt == "1":  # Shop Products
             users.update_one({"number": num}, {"$set": {"status": "browsing", "browse_index": 0}})
-            resp.message(BOT_TEXT["product_menu"])
+            resp.message(BOT_TEXT["browsing_intro"])
             return send_product(resp, 0)
         elif txt == "2":  # Contact
             resp.message(BOT_TEXT["contact_info"])
@@ -278,8 +325,12 @@ def reply():
         
         if "next" in txt:
             idx = (idx + 1) % len(PRODUCTS)
+            users.update_one({"number": num}, {"$set": {"browse_index": idx}})
+            return send_product(resp, idx)
         elif "prev" in txt or "previous" in txt:
             idx = (idx - 1) % len(PRODUCTS)
+            users.update_one({"number": num}, {"$set": {"browse_index": idx}})
+            return send_product(resp, idx)
         elif "add" in txt:
             product_name = PRODUCTS[idx]["name"]
             users.update_one(
@@ -288,18 +339,25 @@ def reply():
             )
             resp.message(BOT_TEXT["cart_added"].format(product=product_name))
             return send_product(resp, idx)
+        elif "done" in txt:
+            cart = user.get("cart", [])
+            if cart:
+                users.update_one({"number": num}, {"$set": {"status": "checkout"}})
+                resp.message(BOT_TEXT["checkout_address"])
+            else:
+                resp.message("🛒 Your cart is empty! Add some products first.\n\nType *add* to add the current product to cart.")
+                return send_product(resp, idx)
         elif "back" in txt:
             users.update_one({"number": num}, {"$set": {"status": "main"}})
             resp.message(BOT_TEXT["main_menu"])
-            return str(resp)
         elif txt.isdigit() and 1 <= int(txt) <= len(PRODUCTS):
             idx = int(txt) - 1
+            users.update_one({"number": num}, {"$set": {"browse_index": idx}})
+            return send_product(resp, idx)
         else:
-            resp.message("Use ◀️*Previous* | *Next*▶️ | *Add* | *Back*")
-            return str(resp)
-
-        users.update_one({"number": num}, {"$set": {"browse_index": idx}})
-        return send_product(resp, idx)
+            resp.message("Use: ◀️*Previous* | *Next*▶️ | *Add* | *Done* | *Back*")
+            return send_product(resp, idx)
+        return str(resp)
 
     # ─── CART VIEW ───
     if user["status"] == "cart_view":
@@ -315,7 +373,7 @@ def reply():
         elif txt == "4":  # Back to Menu
             users.update_one({"number": num}, {"$set": {"status": "main"}})
             resp.message(BOT_TEXT["main_menu"])
-        else: 
+        else:
             resp.message(BOT_TEXT["invalid"])
         return str(resp)
 
@@ -323,7 +381,7 @@ def reply():
     if user["status"] == "cart_empty":
         if txt == "1":  # Browse Products
             users.update_one({"number": num}, {"$set": {"status": "browsing", "browse_index": 0}})
-            resp.message(BOT_TEXT["product_menu"])
+            resp.message(BOT_TEXT["browsing_intro"])
             return send_product(resp, 0)
         elif txt == "2":  # Back to Menu
             users.update_one({"number": num}, {"$set": {"status": "main"}})
@@ -332,30 +390,159 @@ def reply():
             resp.message(BOT_TEXT["invalid"])
         return str(resp)
 
-    # ─── CHECKOUT ───
+    # ─── CHECKOUT ADDRESS ───
     if user["status"] == "checkout":
         cart = user.get("cart", [])
         total = calculate_cart_total(cart)
         
-        # Save order
-        orders.insert_one({
-            "number": num,
-            "items": cart,
-            "address": raw,
-            "total": total,
-            "time": datetime.now(timezone.utc),
-            "status": "confirmed"
-        })
+        # Store address and move to payment
+        users.update_one(
+            {"number": num}, 
+            {"$set": {"status": "payment", "address": raw}}
+        )
+        resp.message(BOT_TEXT["payment_options"].format(total=total))
+        return str(resp)
+
+    # ─── PAYMENT SELECTION ───
+    if user["status"] == "payment":
+        cart = user.get("cart", [])
+        total = calculate_cart_total(cart)
+        address = user.get("address", "No address provided")
         
-        users.update_one({"number": num}, {"$set": {"status": "ordered", "cart": []}})
-        resp.message(BOT_TEXT["order_confirmation"])
+        if txt == "1":  # Orange Money
+            payment_ref = generate_payment_reference()
+            users.update_one(
+                {"number": num}, 
+                {"$set": {"status": "awaiting_orange_payment", "payment_ref": payment_ref}}
+            )
+            resp.message(BOT_TEXT["payment_orange"].format(amount=total, payment_ref=payment_ref))
+            
+            # Store payment record
+            payments.insert_one({
+                "number": num,
+                "payment_ref": payment_ref,
+                "amount": total,
+                "method": "orange_money",
+                "status": "pending",
+                "created_at": datetime.now(timezone.utc)
+            })
+            
+        elif txt == "2":  # Wave
+            payment_ref = generate_payment_reference()
+            users.update_one(
+                {"number": num}, 
+                {"$set": {"status": "awaiting_wave_payment", "payment_ref": payment_ref}}
+            )
+            resp.message(BOT_TEXT["payment_wave"].format(amount=total, payment_ref=payment_ref))
+            
+            # Store payment record
+            payments.insert_one({
+                "number": num,
+                "payment_ref": payment_ref,
+                "amount": total,
+                "method": "wave",
+                "status": "pending",
+                "created_at": datetime.now(timezone.utc)
+            })
+            
+        elif txt == "3":  # Cash on Delivery
+            order_ref = generate_order_reference()
+            
+            # Create order
+            orders.insert_one({
+                "number": num,
+                "order_ref": order_ref,
+                "items": cart,
+                "address": address,
+                "total": total,
+                "payment_method": "cash_on_delivery",
+                "status": "confirmed",
+                "time": datetime.now(timezone.utc)
+            })
+            
+            users.update_one({"number": num}, {"$set": {"status": "ordered", "cart": []}})
+            resp.message(BOT_TEXT["payment_cod"].format(amount=total, order_ref=order_ref))
+        else:
+            resp.message("Please select a valid payment option (1, 2, or 3)")
+        return str(resp)
+
+    # ─── AWAITING ORANGE PAYMENT ───
+    if user["status"] == "awaiting_orange_payment":
+        transaction_ref = raw.strip()
+        if len(transaction_ref) >= 6:  # Basic validation
+            payment_ref = user.get("payment_ref")
+            cart = user.get("cart", [])
+            total = calculate_cart_total(cart)
+            address = user.get("address", "No address provided")
+            order_ref = generate_order_reference()
+            
+            # Update payment status
+            payments.update_one(
+                {"payment_ref": payment_ref},
+                {"$set": {"status": "confirmed", "transaction_ref": transaction_ref}}
+            )
+            
+            # Create order
+            orders.insert_one({
+                "number": num,
+                "order_ref": order_ref,
+                "items": cart,
+                "address": address,
+                "total": total,
+                "payment_method": "orange_money",
+                "payment_ref": payment_ref,
+                "transaction_ref": transaction_ref,
+                "status": "confirmed",
+                "time": datetime.now(timezone.utc)
+            })
+            
+            users.update_one({"number": num}, {"$set": {"status": "ordered", "cart": []}})
+            resp.message(BOT_TEXT["payment_confirmation"].format(order_ref=order_ref))
+        else:
+            resp.message("❌ Invalid transaction reference. Please provide your Orange Money transaction reference (minimum 6 characters).")
+        return str(resp)
+
+    # ─── AWAITING WAVE PAYMENT ───
+    if user["status"] == "awaiting_wave_payment":
+        transaction_id = raw.strip()
+        if len(transaction_id) >= 6:  # Basic validation
+            payment_ref = user.get("payment_ref")
+            cart = user.get("cart", [])
+            total = calculate_cart_total(cart)
+            address = user.get("address", "No address provided")
+            order_ref = generate_order_reference()
+            
+            # Update payment status
+            payments.update_one(
+                {"payment_ref": payment_ref},
+                {"$set": {"status": "confirmed", "transaction_id": transaction_id}}
+            )
+            
+            # Create order
+            orders.insert_one({
+                "number": num,
+                "order_ref": order_ref,
+                "items": cart,
+                "address": address,
+                "total": total,
+                "payment_method": "wave",
+                "payment_ref": payment_ref,
+                "transaction_id": transaction_id,
+                "status": "confirmed",
+                "time": datetime.now(timezone.utc)
+            })
+            
+            users.update_one({"number": num}, {"$set": {"status": "ordered", "cart": []}})
+            resp.message(BOT_TEXT["payment_confirmation"].format(order_ref=order_ref))
+        else:
+            resp.message("❌ Invalid Wave transaction ID. Please provide your Wave transaction ID (minimum 6 characters).")
         return str(resp)
 
     # ─── AFTER ORDER ───
     if user["status"] == "ordered":
         if txt == "1":  # Shop Again
             users.update_one({"number": num}, {"$set": {"status": "browsing", "browse_index": 0}})
-            resp.message(BOT_TEXT["product_menu"])
+            resp.message(BOT_TEXT["browsing_intro"])
             return send_product(resp, 0)
         elif txt == "2":  # Contact
             users.update_one({"number": num}, {"$set": {"status": "main"}})

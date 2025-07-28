@@ -44,6 +44,14 @@ BOT_TEXT = {
         "Côte d'Ivoire\n\n"
         "_Visit us for the freshest chocolate experience!_"
     ),
+    "browsing_intro": (
+        "🍫 *Luster Chocolate Collection* 🍫\n"
+        "_Handcrafted Excellence from Côte d'Ivoire_\n\n"
+        "📱 *Navigation:*\n"
+        "◀️ *Previous* | *Next* ▶️\n"
+        "*Add* to cart | *Done* to checkout\n"
+        "*Back* to main menu\n\n"
+    ),
     "cart_added": "✅ *{product}* added to your cart!\n\n",
     "cart_view": (
         "🛒 *Your Cart*\n"
@@ -264,9 +272,11 @@ def format_cart_display(cart_items):
             quantity = 1
             
         # Find price for this item
+        price_text = "Price varies"
         unit_price = 0
         for product in PRODUCTS:
             if product['name'] == product_name:
+                price_text = f"${product['price']}" if 'price' in product else product['price_range']
                 unit_price = product['price']
                 break
         
@@ -758,6 +768,7 @@ def reply():
     if user["status"] == "ordered":
         if txt == "1":  # Shop Again
             users.update_one({"number": num}, {"$set": {"status": "browsing", "browse_index": 0}})
+            resp.message(BOT_TEXT["browsing_intro"])
             return send_product(resp, 0)
         elif txt == "2":  # Contact
             users.update_one({"number": num}, {"$set": {"status": "main"}})
@@ -779,6 +790,7 @@ def reply():
     )
     resp.message("Sorry, I didn't understand. Type *menu* to see options.")
     return str(resp)
+
 
 if __name__ == "__main__":
     # Heroku always provides PORT in the environment

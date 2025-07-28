@@ -44,14 +44,6 @@ BOT_TEXT = {
         "Côte d'Ivoire\n\n"
         "_Visit us for the freshest chocolate experience!_"
     ),
-    "browsing_intro": (
-        "🍫 *Luster Chocolate Collection* 🍫\n"
-        "_Handcrafted Excellence from Côte d'Ivoire_\n\n"
-        "📱 *Navigation:*\n"
-        "◀️ *Previous* | *Next* ▶️\n"
-        "*Add* to cart | *Done* to checkout\n"
-        "*Back* to main menu\n\n"
-    ),
     "cart_added": "✅ *{product}* added to your cart!\n\n",
     "cart_view": (
         "🛒 *Your Cart*\n"
@@ -204,14 +196,24 @@ def send_product(resp, idx):
         product = PRODUCTS[idx]
         price_text = f"${product['price']}" if 'price' in product else product['price_range']
         
+        # Include intro for first product
+        intro_text = ""
+        if idx == 0:
+            intro_text = (
+                f"🍫 *Luster Chocolate Collection* 🍫\n"
+                f"_Handcrafted Excellence from Côte d'Ivoire_\n\n"
+            )
+        
         message = (
+            f"{intro_text}"
             f"🍫 *{product['name']}*\n"
             f"{'─' * 30}\n"
             f"💰 *{price_text}*\n\n"
             f"{product['description']}\n\n"
             f"📱 *Commands:*\n"
             f"◀️ *Previous* | *Next* ▶️\n"
-            f"*Add* - Add to cart\n"
+            f"*Add* - Add to cart (default: 1)\n"
+            f"*Add 5* - Add 5 to cart\n"
             f"*Done* - Go to checkout\n"
             f"*Back* - Main menu\n\n"
             f"_Product {idx + 1} of {len(PRODUCTS)}_"
@@ -227,32 +229,132 @@ def send_product(resp, idx):
     return str(resp)
 
 def calculate_cart_total(cart_items):
-    """Calculate total price for cart items"""
+    """Calculate total price for cart items with quantities"""
     total = 0
     for item in cart_items:
+        if isinstance(item, dict):
+            # New format with quantity
+            product_name = item['name']
+            quantity = item.get('quantity', 1)
+        else:
+            # Legacy format (string only)
+            product_name = item
+            quantity = 1
+            
         for product in PRODUCTS:
-            if product['name'] == item:
-                total += product['price']
+            if product['name'] == product_name:
+                total += product['price'] * quantity
                 break
     return round(total, 2)
 
 def format_cart_display(cart_items):
-    """Format cart items for display"""
+    """Format cart items for display with quantities"""
     if not cart_items:
         return "No items in cart"
     
     display_text = ""
     for i, item in enumerate(cart_items, 1):
+        if isinstance(item, dict):
+            # New format with quantity
+            product_name = item['name']
+            quantity = item.get('quantity', 1)
+        else:
+            # Legacy format (string only)
+            product_name = item
+            quantity = 1
+            
         # Find price for this item
-        price_text = "Price varies"
+        unit_price = 0
         for product in PRODUCTS:
-            if product['name'] == item:
-                price_text = f"${product['price']}" if 'price' in product else product['price_range']
+            if product['name'] == product_name:
+                unit_price = product['price']
                 break
         
-        display_text += f"{i}. {item}\n   {price_text}\n\n"
+        total_price = unit_price * quantity
+        display_text += f"{i}. {product_name}\n"
+        display_text += f"   Qty: {quantity} × ${unit_price} = ${total_price:.2f}\n"
+        display_text += f"   Type *remove {i}* to remove\n\n"
     
     return display_text.strip()
+
+def find_product_by_name(product_name):
+    """Find product by partial name match"""
+    product_name_lower = product_name.lower()
+    for i, product in enumerate(PRODUCTS):
+        if product_name_lower in product['name'].lower():
+            return i, product
+    return None, None
+
+def parse_quantity_command(text):
+    """Parse commands like 'add 5', '10 cocoa butter', etc."""
+    text = text.strip()
+    
+    # Pattern 1: "add 5" or "add"
+    if text.startswith('add'):
+        parts = text.split()
+        if len(parts) == 1:
+            return 1, None  # Just "add"
+        elif len(parts) == 2 and parts[1].isdigit():
+            return int(parts[1]), None  # "add 5"
+    
+    # Pattern 2: "5 cocoa butter" or "cocoa butter"
+    parts = text.split()
+    if parts and parts[0].isdigit():
+        quantity = int(parts[0])
+        product_name = ' '.join(parts[1:])
+        return quantity, product_name
+    else:
+        # No quantity specified, assume 1
+        return 1, text
+
+def add_to_cart(user_cart, product_name, quantity=1):
+    """Add item to cart with quantity support"""
+    # Find if product already exists in cart
+    for item in user_cart:
+        if isinstance(item, dict) and item['name'] == product_name:
+            item['quantity'] += quantity
+            return user_cart
+        elif isinstance(item, str) and item == product_name:
+            # Convert old format to new format
+            user_cart.remove(item)
+            user_cart.append({'name': product_name, 'quantity': quantity + 1})
+            return user_cart
+    
+    # Add new item
+    user_cart.append({'name': product_name, 'quantity': quantity})
+    return user_cart
+
+def remove_from_cart(user_cart, index):
+    """Remove item from cart by index"""
+    if 1 <= index <= len(user_cart):
+        removed_item = user_cart.pop(index - 1)
+        return user_cart, removed_item
+    return user_cart, None
+
+def show_cart_management(resp, cart_items):
+    """Display cart with management options"""
+    if not cart_items:
+        resp.message(BOT_TEXT["cart_empty"])
+        return str(resp)
+    
+    cart_display = format_cart_display(cart_items)
+    total = calculate_cart_total(cart_items)
+    
+    cart_msg = (
+        f"🛒 *Your Cart* 🛒\n"
+        f"{'─' * 25}\n"
+        f"{cart_display}\n"
+        f"{'─' * 25}\n"
+        f"💰 *Total: ${total}*\n\n"
+        f"*Commands:*\n"
+        f"• *remove 1* - Remove item #1\n"
+        f"• *add [quantity] [product]* - Add more items\n"
+        f"• *checkout* - Proceed to checkout\n"
+        f"• *clear* - Clear entire cart\n"
+        f"• *back* - Return to menu"
+    )
+    resp.message(cart_msg)
+    return str(resp)
 
 def generate_payment_reference():
     """Generate unique payment reference"""
@@ -280,13 +382,38 @@ def reply():
             upsert=True
         )
         msg = resp.message(BOT_TEXT["main_menu"])
-        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
+        msg.media("https://images.unsplash.com/photo-1549808276-e3a2c8c99137?w=800&h=600&fit=crop")
         return str(resp)
+    
+    # ─── GLOBAL COMMANDS (work from any state) ───
+    if any(phrase in txt for phrase in ("my cart", "cart", "show cart")):
+        cart = user.get("cart", []) if user else []
+        users.update_one({"number": num}, {"$set": {"status": "cart_management"}}, upsert=True)
+        return show_cart_management(resp, cart)
+    
+    # Handle quantity commands like "10 cocoa butter"
+    if re.match(r'^\d+\s+\w+', txt):
+        quantity, product_name = parse_quantity_command(txt)
+        idx, product = find_product_by_name(product_name)
+        if product:
+            cart = user.get("cart", []) if user else []
+            cart = add_to_cart(cart, product['name'], quantity)
+            users.update_one(
+                {"number": num},
+                {"$set": {"cart": cart}},
+                upsert=True
+            )
+            add_msg = f"✅ Added {quantity}x *{product['name']}* to your cart!"
+            resp.message(add_msg)
+            return str(resp)
+        else:
+            resp.message(f"❌ Product '{product_name}' not found. Type *1* to browse products.")
+            return str(resp)
 
     # ─── NEW USER ───
     if not user:
         msg = resp.message(BOT_TEXT["main_menu"])
-        msg.media("https://lusterchocolate.com/wp-content/uploads/2022/09/pr-3-3-scaled-1.jpeg")
+        msg.media("https://images.unsplash.com/photo-1549808276-e3a2c8c99137?w=800&h=600&fit=crop")
         users.insert_one({
             "number": num,
             "status": "main",
@@ -300,7 +427,7 @@ def reply():
     if user["status"] == "main":
         if txt == "1":  # Shop Products
             users.update_one({"number": num}, {"$set": {"status": "browsing", "browse_index": 0}})
-            resp.message(BOT_TEXT["browsing_intro"])
+            # Send intro and immediately show first product
             return send_product(resp, 0)
         elif txt == "2":  # Contact
             resp.message(BOT_TEXT["contact_info"])
@@ -336,12 +463,23 @@ def reply():
             users.update_one({"number": num}, {"$set": {"browse_index": idx}})
             return send_product(resp, idx)
         elif "add" in txt:
+            # Parse quantity from add command
+            quantity, _ = parse_quantity_command(txt)
             product_name = PRODUCTS[idx]["name"]
+            
+            cart = user.get("cart", [])
+            cart = add_to_cart(cart, product_name, quantity)
+            
             users.update_one(
                 {"number": num},
-                {"$push": {"cart": product_name}}
+                {"$set": {"cart": cart}}
             )
-            cart_msg = BOT_TEXT["cart_added"].format(product=product_name)
+            
+            if quantity == 1:
+                cart_msg = BOT_TEXT["cart_added"].format(product=product_name)
+            else:
+                cart_msg = f"✅ Added {quantity}x *{product_name}* to your cart!"
+            
             resp.message(cart_msg)
             return send_product(resp, idx)
         elif "done" in txt:
@@ -385,7 +523,6 @@ def reply():
     if user["status"] == "cart_empty":
         if txt == "1":  # Browse Products
             users.update_one({"number": num}, {"$set": {"status": "browsing", "browse_index": 0}})
-            resp.message(BOT_TEXT["browsing_intro"])
             return send_product(resp, 0)
         elif txt == "2":  # Back to Menu
             users.update_one({"number": num}, {"$set": {"status": "main"}})
@@ -548,11 +685,79 @@ def reply():
             resp.message("❌ Invalid Wave transaction ID. Please provide your Wave transaction ID (minimum 6 characters).")
         return str(resp)
 
+    # ─── CART MANAGEMENT ───
+    if user["status"] == "cart_management":
+        cart = user.get("cart", [])
+        
+        if txt.startswith("remove "):
+            try:
+                index = int(txt.split()[1])
+                cart, removed_item = remove_from_cart(cart, index)
+                users.update_one({"number": num}, {"$set": {"cart": cart}})
+                
+                if removed_item:
+                    if isinstance(removed_item, dict):
+                        item_name = removed_item['name']
+                        quantity = removed_item.get('quantity', 1)
+                        resp.message(f"🗑️ Removed {quantity}x *{item_name}* from cart")
+                    else:
+                        resp.message(f"🗑️ Removed *{removed_item}* from cart")
+                else:
+                    resp.message("❌ Invalid item number")
+                
+                return show_cart_management(resp, cart)
+            except (ValueError, IndexError):
+                resp.message("❌ Please specify item number (e.g., 'remove 1')")
+                return show_cart_management(resp, cart)
+                
+        elif txt == "clear":
+            users.update_one({"number": num}, {"$set": {"cart": []}})
+            resp.message("🗑️ Cart cleared!")
+            return show_cart_management(resp, [])
+            
+        elif txt == "checkout":
+            if cart:
+                users.update_one({"number": num}, {"$set": {"status": "checkout"}})
+                resp.message(BOT_TEXT["checkout_address"])
+            else:
+                resp.message("🛒 Your cart is empty!")
+                return show_cart_management(resp, cart)
+                
+        elif txt == "back":
+            users.update_one({"number": num}, {"$set": {"status": "main"}})
+            resp.message(BOT_TEXT["main_menu"])
+            
+        elif txt.startswith("add "):
+            # Handle adding items from cart management
+            parts = txt.split()
+            if len(parts) >= 3:  # "add 5 cocoa"
+                try:
+                    quantity = int(parts[1])
+                    product_name = ' '.join(parts[2:])
+                    idx, product = find_product_by_name(product_name)
+                    if product:
+                        cart = add_to_cart(cart, product['name'], quantity)
+                        users.update_one({"number": num}, {"$set": {"cart": cart}})
+                        resp.message(f"✅ Added {quantity}x *{product['name']}* to cart")
+                        return show_cart_management(resp, cart)
+                    else:
+                        resp.message(f"❌ Product '{product_name}' not found")
+                        return show_cart_management(resp, cart)
+                except ValueError:
+                    resp.message("❌ Invalid quantity. Use: add [number] [product name]")
+                    return show_cart_management(resp, cart)
+            else:
+                resp.message("❌ Usage: add [quantity] [product name]")
+                return show_cart_management(resp, cart)
+        else:
+            return show_cart_management(resp, cart)
+        
+        return str(resp)
+
     # ─── AFTER ORDER ───
     if user["status"] == "ordered":
         if txt == "1":  # Shop Again
             users.update_one({"number": num}, {"$set": {"status": "browsing", "browse_index": 0}})
-            resp.message(BOT_TEXT["browsing_intro"])
             return send_product(resp, 0)
         elif txt == "2":  # Contact
             users.update_one({"number": num}, {"$set": {"status": "main"}})
@@ -573,7 +778,7 @@ def reply():
         {"$push": {"messages": {"text": raw, "date": datetime.now(timezone.utc)}}}
     )
     resp.message("Sorry, I didn't understand. Type *menu* to see options.")
-    return str(resp) 
+    return str(resp)
 
 if __name__ == "__main__":
     # Heroku always provides PORT in the environment

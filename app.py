@@ -44,7 +44,34 @@ BOT_TEXT = {
         "Côte d'Ivoire\n\n"
         "_Visit us for the freshest chocolate experience!_"
     ),
-    "cart_added": "✅ *{product}* added to your cart!\n\n",
+    "product_menu": (
+        "🍫 *Luster Chocolate Collection* 🍫\n"
+        "_Handcrafted Excellence from Côte d'Ivoire_\n\n"
+        "*1.* Roasted Coffee Dark Chocolate Bar - *$8.99*\n"
+        "70% Ivorian dark chocolate infused with locally roasted coffee beans\n\n"
+        "*2.* Premium Cocoa Bar (70%) - *$9.99*\n"
+        "Our signature dark chocolate bar made from slow-roasted Ivorian cacao beans\n\n"
+        "*3.* Ginger Spice Chocolate Bar - *$8.99*\n"
+        "Dark chocolate meets crystallized ginger for a warming sensation\n\n"
+        "*4.* Cocoa Nibs Dark Chocolate Bar - *$9.99*\n"
+        "Crunchy roasted cocoa nibs embedded in smooth dark chocolate\n\n"
+        "*5.* Pure Cocoa Butter - *$15.00-$35.00*\n"
+        "Premium food-grade cocoa butter, perfect for baking or skincare\n\n"
+        "*6.* Dark Chocolate Covered Cashews - *$12.00-$32.00*\n"
+        "Premium roasted cashews enrobed in our signature dark chocolate\n\n"
+        "*7.* Roasted Cocoa Nibs (Premium Pack) - *$14.00-$28.00*\n"
+        "Artisanally roasted cocoa nibs packed with antioxidants\n\n"
+        "*8.* Whole Cocoa Beans - *$10.00*\n"
+        "Premium dried and fermented Ivorian cocoa beans\n\n"
+        "*9.* Artisan Cocoa Powder - *$11.00-$24.00*\n"
+        "Unsweetened, high-fat cocoa powder for baking and hot chocolate\n\n"
+        "📝 *How to Order:*\n"
+        "• Type a number (1-9) to add 1 item\n"
+        "• Type quantity + name (e.g., '3 Cocoa Butter')\n"
+        "• Type 'done' when finished\n"
+        "• Type 'back' for main menu"
+    ),
+    "item_added": "✅ Added {quantity}x *{product}* to your cart!\n\n🛒 *Anything else?*\n\nContinue ordering or type 'done' to checkout.",
     "cart_view": (
         "🛒 *Your Cart*\n"
         "─────────────\n"
@@ -116,6 +143,7 @@ BOT_TEXT = {
         "3️⃣ About Luster\n"
         "4️⃣ Main Menu"
     ),
+    "invalid_product": "❌ Please enter a valid product number (1-9) or product name.",
 }
 
 # ─── PRODUCT CATALOG ─────────────────────────────────────────────────
@@ -124,59 +152,50 @@ PRODUCTS = [
         "name": "Roasted Coffee Dark Chocolate Bar",
         "price": 8.99,
         "description": "70% Ivorian dark chocolate infused with locally roasted coffee beans. A bold, aromatic experience that celebrates the rich flavors of Côte d'Ivoire. Made from sustainably sourced cacao beans grown in the heart of Africa's cocoa region.",
-        "image": "https://images.unsplash.com/photo-1610450949065-1f2841536c88?w=800&h=600&fit=crop"
     },
     {
         "name": "Premium Cocoa Bar (70%)",
         "price": 9.99,
         "description": "Our signature 70% dark chocolate bar made from slow-roasted Ivorian cacao beans. Pure, intense chocolate flavor with hints of tropical fruit and earthy undertones. Each bar represents hours of careful craftsmanship from bean to bar.",
-        "image": "https://images.unsplash.com/photo-1511381939415-e44015466834?w=800&h=600&fit=crop"
     },
     {
         "name": "Ginger Spice Chocolate Bar",
         "price": 8.99,
         "description": "Dark chocolate meets crystallized ginger for a warming, spicy-sweet sensation. Perfect balance of heat and sweetness from local ingredients. The ginger adds a delightful zing that complements the rich cocoa perfectly.",
-        "image": "https://images.unsplash.com/photo-1549007953-2f2dc0b24019?w=800&h=600&fit=crop"
     },
     {
         "name": "Cocoa Nibs Dark Chocolate Bar",
         "price": 9.99,
         "description": "Crunchy roasted cocoa nibs embedded in smooth dark chocolate. Double the cocoa intensity with satisfying texture. These roasted nibs provide bursts of pure chocolate flavor and a delightful crunch in every bite.",
-        "image": "https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=800&h=600&fit=crop"
     },
     {
         "name": "Pure Cocoa Butter",
         "price_range": "$15.00 - $35.00",
         "price": 25.00,  # Average price for calculations
         "description": "Premium food-grade cocoa butter from Ivorian cacao beans. Perfect for baking, cooking, or skincare. Available in 250g and 500g sizes. This pure, unrefined cocoa butter retains all its natural properties and delicate chocolate aroma.",
-        "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop"
     },
     {
         "name": "Dark Chocolate Covered Cashews",
         "price_range": "$12.00 - $32.00",
         "price": 22.00,  # Average price for calculations
         "description": "Premium roasted cashews enrobed in our signature dark chocolate. Available in 200g and 500g packages. Each cashew is carefully roasted to perfection before being coated in our smooth, rich chocolate.",
-        "image": "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?w=800&h=600&fit=crop"
     },
     {
         "name": "Roasted Cocoa Nibs (Premium Pack)",
         "price_range": "$14.00 - $28.00",
         "price": 21.00,  # Average price for calculations
         "description": "Artisanally roasted cocoa nibs packed with antioxidants. Perfect for smoothies, baking, or healthy snacking. 250g and 500g options. These crunchy nibs are pure chocolate essence - intense, slightly bitter, and incredibly nutritious.",
-        "image": "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=800&h=600&fit=crop"
     },
     {
         "name": "Whole Cocoa Beans",
         "price": 10.00,
         "description": "Premium dried and fermented Ivorian cocoa beans. Perfect for chocolate making enthusiasts or as a unique, nutritious snack. These beans showcase the terroir of Côte d'Ivoire's finest cacao growing regions.",
-        "image": "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=800&h=600&fit=crop"
     },
     {
         "name": "Artisan Cocoa Powder",
         "price_range": "$11.00 - $24.00",
         "price": 17.50,  # Average price for calculations
         "description": "Unsweetened, high-fat cocoa powder perfect for baking and hot chocolate. Rich, intense flavor from stone-ground Ivorian beans. 200g and 500g sizes. This powder delivers exceptional depth and complexity to any recipe.",
-        "image": "https://images.unsplash.com/photo-1569997685772-0fb9ec1a3c8d?w=800&h=600&fit=crop"
     }
 ]
 
@@ -190,43 +209,6 @@ payments = db["payments"]
 app = Flask(__name__)
 
 # ─── HELPER FUNCTIONS ──────────────────────────────────────────────
-def send_product(resp, idx):
-    """Send product information with enhanced formatting"""
-    if 0 <= idx < len(PRODUCTS):
-        product = PRODUCTS[idx]
-        price_text = f"${product['price']}" if 'price' in product else product['price_range']
-        
-        # Include intro for first product
-        intro_text = ""
-        if idx == 0:
-            intro_text = (
-                f"🍫 *Luster Chocolate Collection* 🍫\n"
-                f"_Handcrafted Excellence from Côte d'Ivoire_\n\n"
-            )
-        
-        message = (
-            f"{intro_text}"
-            f"🍫 *{product['name']}*\n"
-            f"{'─' * 30}\n"
-            f"💰 *{price_text}*\n\n"
-            f"{product['description']}\n\n"
-            f"📱 *Commands:*\n"
-            f"◀️ *Previous* | *Next* ▶️\n"
-            f"*Add* - Add to cart (default: 1)\n"
-            f"*Add 5* - Add 5 to cart\n"
-            f"*Done* - Go to checkout\n"
-            f"*Back* - Main menu\n\n"
-            f"_Product {idx + 1} of {len(PRODUCTS)}_"
-        )
-        
-        msg = resp.message(message)
-        try:
-            msg.media(product['image'])
-        except Exception as e:
-            print(f"Error attaching image for {product['name']}: {e}")
-    else:
-        resp.message("❌ Product not found. Type *back* to return to menu.")
-    return str(resp)
 
 def calculate_cart_total(cart_items):
     """Calculate total price for cart items with quantities"""
@@ -426,9 +408,9 @@ def reply():
     # ─── MAIN MENU ───
     if user["status"] == "main":
         if txt == "1":  # Shop Products
-            users.update_one({"number": num}, {"$set": {"status": "browsing", "browse_index": 0}})
-            # Send intro and immediately show first product
-            return send_product(resp, 0)
+            users.update_one({"number": num}, {"$set": {"status": "ordering"}})
+            resp.message(BOT_TEXT["product_menu"])
+            return str(resp)
         elif txt == "2":  # Contact
             resp.message(BOT_TEXT["contact_info"])
         elif txt == "3":  # About
@@ -450,62 +432,59 @@ def reply():
             resp.message(BOT_TEXT["invalid"])
         return str(resp)
 
-    # ─── BROWSING PRODUCTS ───
-    if user["status"] == "browsing":
-        idx = user.get("browse_index", 0)
+    # ─── ORDERING MODE ───
+    if user["status"] == "ordering":
+        cart = user.get("cart", [])
         
-        if "next" in txt:
-            idx = (idx + 1) % len(PRODUCTS)
-            users.update_one({"number": num}, {"$set": {"browse_index": idx}})
-            return send_product(resp, idx)
-        elif "prev" in txt or "previous" in txt:
-            idx = (idx - 1) % len(PRODUCTS)
-            users.update_one({"number": num}, {"$set": {"browse_index": idx}})
-            return send_product(resp, idx)
-        elif "add" in txt:
-            # Parse quantity from add command
-            quantity, _ = parse_quantity_command(txt)
-            product_name = PRODUCTS[idx]["name"]
-            
-            cart = user.get("cart", [])
-            cart = add_to_cart(cart, product_name, quantity)
-            
-            users.update_one(
-                {"number": num},
-                {"$set": {"cart": cart}}
-            )
-            
-            if quantity == 1:
-                cart_msg = BOT_TEXT["cart_added"].format(product=product_name)
-            else:
-                cart_msg = f"✅ Added {quantity}x *{product_name}* to your cart!"
-            
-            resp.message(cart_msg)
-            return send_product(resp, idx)
-        elif "done" in txt:
-            cart = user.get("cart", [])
+        # Handle "done" or "back" commands
+        if "done" in txt:
             if cart:
                 users.update_one({"number": num}, {"$set": {"status": "checkout"}})
                 resp.message(BOT_TEXT["checkout_address"])
             else:
-                resp.message("🛒 Your cart is empty! Add some products first.\n\nType *add* to add the current product to cart.")
-                return send_product(resp, idx)
+                resp.message("🛒 Your cart is empty! Please add some products first.")
+                resp.message(BOT_TEXT["product_menu"])
+            return str(resp)
         elif "back" in txt:
             users.update_one({"number": num}, {"$set": {"status": "main"}})
             resp.message(BOT_TEXT["main_menu"])
-        elif txt.isdigit() and 1 <= int(txt) <= len(PRODUCTS):
-            idx = int(txt) - 1
-            users.update_one({"number": num}, {"$set": {"browse_index": idx}})
-            return send_product(resp, idx)
+            return str(resp)
+        
+        # Handle number selection (1-9)
+        if txt.isdigit() and 1 <= int(txt) <= len(PRODUCTS):
+            product_idx = int(txt) - 1
+            product_name = PRODUCTS[product_idx]["name"]
+            cart = add_to_cart(cart, product_name, 1)
+            
+            users.update_one({"number": num}, {"$set": {"cart": cart}})
+            add_msg = BOT_TEXT["item_added"].format(quantity=1, product=product_name)
+            resp.message(add_msg)
+            return str(resp)
+        
+        # Handle quantity + product name (e.g., "3 Cocoa Butter")
+        elif re.match(r'^\d+\s+\w+', txt):
+            quantity, product_name = parse_quantity_command(txt)
+            idx, product = find_product_by_name(product_name)
+            if product:
+                cart = add_to_cart(cart, product['name'], quantity)
+                users.update_one({"number": num}, {"$set": {"cart": cart}})
+                add_msg = BOT_TEXT["item_added"].format(quantity=quantity, product=product['name'])
+                resp.message(add_msg)
+            else:
+                resp.message(BOT_TEXT["invalid_product"])
+                resp.message(BOT_TEXT["product_menu"])
+            return str(resp)
+        
+        # Invalid input
         else:
-            resp.message("Use: ◀️*Previous* | *Next*▶️ | *Add* | *Done* | *Back*")
-            return send_product(resp, idx)
+            resp.message(BOT_TEXT["invalid_product"])
+            resp.message(BOT_TEXT["product_menu"])
 
     # ─── CART VIEW ───
     if user["status"] == "cart_view":
         if txt == "1":  # Continue Shopping
-            users.update_one({"number": num}, {"$set": {"status": "browsing"}})
-            return send_product(resp, user.get("browse_index", 0))
+            users.update_one({"number": num}, {"$set": {"status": "ordering"}})
+            resp.message(BOT_TEXT["product_menu"])
         elif txt == "2":  # Checkout
             users.update_one({"number": num}, {"$set": {"status": "checkout"}})
             resp.message(BOT_TEXT["checkout_address"])
@@ -522,8 +501,8 @@ def reply():
     # ─── CART EMPTY ───
     if user["status"] == "cart_empty":
         if txt == "1":  # Browse Products
-            users.update_one({"number": num}, {"$set": {"status": "browsing", "browse_index": 0}})
-            return send_product(resp, 0)
+            users.update_one({"number": num}, {"$set": {"status": "ordering"}})
+            resp.message(BOT_TEXT["product_menu"])
         elif txt == "2":  # Back to Menu
             users.update_one({"number": num}, {"$set": {"status": "main"}})
             resp.message(BOT_TEXT["main_menu"])
@@ -757,8 +736,8 @@ def reply():
     # ─── AFTER ORDER ───
     if user["status"] == "ordered":
         if txt == "1":  # Shop Again
-            users.update_one({"number": num}, {"$set": {"status": "browsing", "browse_index": 0}})
-            return send_product(resp, 0)
+            users.update_one({"number": num}, {"$set": {"status": "ordering"}})
+            resp.message(BOT_TEXT["product_menu"])
         elif txt == "2":  # Contact
             users.update_one({"number": num}, {"$set": {"status": "main"}})
             resp.message(BOT_TEXT["contact_info"])

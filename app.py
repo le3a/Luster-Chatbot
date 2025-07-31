@@ -252,12 +252,86 @@ def format_cart_display(cart_items):
     
     return display_text.strip()
 
+def normalize_text(text):
+    """Normalize text for better matching"""
+    return text.lower().strip().replace('-', ' ').replace('_', ' ')
+
 def find_product_by_name(product_name):
-    """Find product by partial name match"""
-    product_name_lower = product_name.lower()
-    for i, product in enumerate(PRODUCTS):
-        if product_name_lower in product['name'].lower():
-            return i, product
+    """Enhanced product matching with abbreviations, typos, and aliases"""
+    product_name = normalize_text(product_name)
+    
+    # Enhanced product matching patterns
+    product_patterns = {
+        0: [  # Roasted Coffee 70% Cocoa
+            'roasted coffee', 'coffee', 'coffee 70', 'coffee bar', 'coffee chocolate',
+            'roasted coffee 70', 'coffee cocoa', 'coffe', 'cofee'
+        ],
+        1: [  # Roasted Cocoa 70% Cocoa
+            'roasted cocoa', 'cocoa 70', 'cocoa bar', 'dark chocolate', 'dark cocoa',
+            'roasted cocoa 70', 'signature cocoa', 'plain cocoa', 'cocoa chocolate',
+            'dark', '70 cocoa', 'cocoa'
+        ],
+        2: [  # Ginger 70% Cocoa
+            'ginger', 'ginger 70', 'ginger cocoa', 'ginger chocolate', 'ginger bar',
+            'spicy chocolate', 'zingy', 'ginjer', 'gingr'
+        ],
+        3: [  # Cocoa Nibs 70% Cocoa (bar)
+            'cocoa nibs 70', 'nibs 70', 'cocoa nibs bar', 'nibs bar', 'crunchy cocoa',
+            'cocoa nibs chocolate', 'nibs chocolate', 'cocoa nib', 'nibs bar', 
+            'nibs chocolate bar', 'chocolate nibs'
+        ],
+        4: [  # Pure Cocoa Butter
+            'pure cocoa butter', 'cocoa butter', 'butter', 'cacao butter', 'pure butter',
+            'natural butter', 'unrefined butter', 'baking butter', 'cocoa fat',
+            'coco butter', 'cacoa butter'
+        ],
+        5: [  # Premium Cocoa Powder
+            'premium cocoa powder', 'cocoa powder', 'powder', 'cacao powder', 
+            'premium powder', 'baking powder', 'chocolate powder', 'unsweetened powder',
+            'cocoa dust', 'coco powder', 'cacoa powder', 'powdr'
+        ],
+        6: [  # Roasted Cocoa Nibs Pack
+            'roasted cocoa nibs', 'cocoa nibs pack', 'nibs pack', 'roasted nibs',
+            'cocoa nibs', 'nibs', 'crunchy nibs', 'antioxidant nibs', 'pure nibs',
+            'raw nibs', 'nib pack', 'cocoa nib pack', 'snacking nibs',
+            'roasted cocoa nibs pack'
+        ]
+    }
+    
+    # Handle special disambiguation for "nibs" - prioritize pack over bar
+    if product_name in ['nibs', 'nib', 'cocoa nibs', 'cocoa nib']:
+        # Check if context suggests the pack (more common when ordering raw ingredients)
+        return 6, PRODUCTS[6]  # Default to Roasted Cocoa Nibs Pack
+    
+    # First try exact matches
+    for idx, patterns in product_patterns.items():
+        if product_name in patterns:
+            return idx, PRODUCTS[idx]
+    
+    # Then try partial matches (contains)
+    for idx, patterns in product_patterns.items():
+        for pattern in patterns:
+            if pattern in product_name or product_name in pattern:
+                return idx, PRODUCTS[idx]
+    
+    # Try fuzzy matching for typos (simple character similarity)
+    best_match = None
+    best_score = 0
+    
+    for idx, patterns in product_patterns.items():
+        for pattern in patterns:
+            # Simple similarity score based on common characters
+            common_chars = len(set(product_name) & set(pattern))
+            max_chars = max(len(product_name), len(pattern))
+            if max_chars > 0:
+                score = common_chars / max_chars
+                if score > 0.6 and score > best_score:  # 60% similarity threshold
+                    best_score = score
+                    best_match = (idx, PRODUCTS[idx])
+    
+    if best_match:
+        return best_match
+    
     return None, None
 
 def parse_quantity_command(text):
@@ -343,27 +417,33 @@ def generate_order_reference():
 
 
 def parse_comma_separated_order(text):
-    """Parse comma-separated orders like '3 Cocoa Butter, 6 Roasted Nibs, done'"""
+    """Enhanced comma-separated order parsing"""
     text = text.strip()
     items_to_add = []
     checkout_requested = False
     
     # Split by commas and process each part
-    parts = [part.strip() for part in text.split(',')]
+    parts = [part.strip() for part in text.split(',') if part.strip()]
     
     for part in parts:
-        part = part.lower().strip()
+        part_original = part
+        part = normalize_text(part)
         
         # Check for checkout commands
-        if part in ['done', 'checkout', 'buy', 'finish', 'complete']:
+        if any(cmd in part for cmd in ['done', 'checkout', 'buy', 'finish', 'complete', 'pay']):
             checkout_requested = True
             continue
-            
-        # Try to parse quantity + product name (e.g., "3 cocoa butter")
+        
+        # Try to parse quantity + product name (e.g., "4 cocoa nibs", "5 pure cocoa butter")
         quantity_match = re.match(r'^(\d+)\s+(.+)$', part)
         if quantity_match:
             quantity = int(quantity_match.group(1))
-            product_name = quantity_match.group(2)
+            product_name = quantity_match.group(2).strip()
+            
+            # Handle special cases where quantity might be confused with product number
+            if quantity > 20:  # If quantity seems too high, treat as invalid
+                continue
+                
             idx, product = find_product_by_name(product_name)
             if product:
                 items_to_add.append({
@@ -373,7 +453,7 @@ def parse_comma_separated_order(text):
                 })
                 continue
         
-        # Try single product name or alias
+        # Try single product name or alias (no quantity specified)
         idx, product = find_product_by_name(part)
         if product:
             items_to_add.append({
@@ -383,7 +463,7 @@ def parse_comma_separated_order(text):
             })
             continue
             
-        # Try number only (1-7)
+        # Try number only (1-7) - direct product selection
         if part.isdigit() and 1 <= int(part) <= len(PRODUCTS):
             idx = int(part) - 1
             items_to_add.append({
@@ -391,11 +471,17 @@ def parse_comma_separated_order(text):
                 'quantity': 1,
                 'name': PRODUCTS[idx]['name']
             })
+            continue
+        
+        # If we get here, the part couldn't be parsed
+        # This helps with debugging - we can log unrecognized parts
+        # For production, you might want to remove this print statement
+        pass  # Silently ignore unrecognized parts
     
     return items_to_add, checkout_requested
 
 def process_comma_order(user_cart, items_to_add):
-    """Process comma-separated order items"""
+    """Process comma-separated order items with better descriptions"""
     added_descriptions = []
     
     for item in items_to_add:
@@ -409,6 +495,28 @@ def process_comma_order(user_cart, items_to_add):
             added_descriptions.append(f"{quantity}x {product_name}")
     
     return user_cart, added_descriptions
+
+# ─── TEST ENHANCED PARSING (Remove this in production) ───
+def test_parsing():
+    """Test the enhanced parsing system"""
+    test_cases = [
+        "4 cocoa nibs",
+        "5 pure cocoa butter, 6 premium cocoa powder",
+        "nibs",
+        "Cocoa Nibs",
+        "butter",
+        "powder",
+        "3 ginger, 2 coffee, done"
+    ]
+    
+    print("Testing enhanced parsing system:")
+    for test in test_cases:
+        print(f"\nInput: '{test}'")
+        items, checkout = parse_comma_separated_order(test)
+        for item in items:
+            print(f"  → {item['quantity']}x {item['name']}")
+        if checkout:
+            print("  → Checkout requested")
 
 # ─── MAIN ROUTE ───────────────────────────────────────────────────────
 @app.route("/", methods=["GET", "POST"])
@@ -858,7 +966,10 @@ def reply():
     resp.message("Sorry, I didn't understand. Type *menu* to see options.")
     return str(resp)
 
+# ─── MAIN APPLICATION ───────────────────────────────────────────────
 if __name__ == "__main__":
-    # Heroku always provides PORT in the environment
-    port = int(os.environ["PORT"])
-    app.run(host="0.0.0.0", port=port)
+    # Uncomment the line below to test parsing
+    # test_parsing()
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
+

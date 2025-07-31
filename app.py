@@ -47,53 +47,49 @@ BOT_TEXT = {
     "product_menu": (
         "🍫 *Luster Chocolate Collection* 🍫\n"
         "_Handcrafted Excellence from Côte d'Ivoire_\n\n"
-        "*1.* Roasted Coffee Dark Chocolate Bar - *$8.99*\n"
-        "70% Ivorian dark chocolate infused with locally roasted coffee beans\n\n"
-        "*2.* Premium Cocoa Bar (70%) - *$9.99*\n"
-        "Our signature dark chocolate bar made from slow-roasted Ivorian cacao beans\n\n"
-        "*3.* Ginger Spice Chocolate Bar - *$8.99*\n"
-        "Dark chocolate meets crystallized ginger for a warming sensation\n\n"
-        "*4.* Cocoa Nibs Dark Chocolate Bar - *$9.99*\n"
-        "Crunchy roasted cocoa nibs embedded in smooth dark chocolate\n\n"
-        "*5.* Pure Cocoa Butter - *$15.00-$35.00*\n"
-        "Premium food-grade cocoa butter, perfect for baking or skincare\n\n"
-        "*6.* Dark Chocolate Covered Cashews - *$12.00-$32.00*\n"
-        "Premium roasted cashews enrobed in our signature dark chocolate\n\n"
-        "*7.* Roasted Cocoa Nibs (Premium Pack) - *$14.00-$28.00*\n"
+        "*1.* Roasted Coffee 70% Cocoa - *$2.99*\n"
+        "70% dark chocolate infused with perfectly roasted coffee beans\n\n"
+        "*2.* Roasted Cocoa 70% Cocoa - *$2.99*\n"
+        "Our signature 70% cocoa dark chocolate bar\n\n"
+        "*3.* Ginger 70% Cocoa - *$2.99*\n"
+        "Rich dark chocolate meets zesty ginger for a spicy-sweet treat\n\n"
+        "*4.* Cocoa Nibs 70% Cocoa - *$2.99*\n"
+        "Crunchy cocoa nibs enrobed in dark chocolate\n\n"
+        "*5.* Pure Cocoa Butter - *$12.00*\n"
+        "100% natural and unrefined cocoa butter for baking & skincare\n\n"
+        "*6.* Premium Cocoa Powder - *$7.00*\n"
+        "Rich, unsweetened cocoa powder for baking and hot chocolate\n\n"
+        "*7.* Roasted Cocoa Nibs Pack - *$11.50*\n"
         "Artisanally roasted cocoa nibs packed with antioxidants\n\n"
-        "*8.* Whole Cocoa Beans - *$10.00*\n"
-        "Premium dried and fermented Ivorian cocoa beans\n\n"
-        "*9.* Artisan Cocoa Powder - *$11.00-$24.00*\n"
-        "Unsweetened, high-fat cocoa powder for baking and hot chocolate\n\n"
-        "📝 *How to Order:*\n"
-        "• Type a number (1-9) to add 1 item\n"
-        "• Type quantity + name (e.g., '3 Cocoa Butter')\n"
-        "• Type 'done' when finished\n"
-        "• Type 'back' for main menu"
+        "💡 *How to Order:*\n"
+        "• Single item: *1* or *3 Ginger*\n"
+        "• Multiple items: *3 Cocoa Butter, 6 Roasted Nibs, done*\n"
+        "• Just type product numbers or names separated by commas\n\n"
+        "🛒 *My Cart:* Type *cart* | ✅ *Checkout:* Type *done*"
     ),
-    "item_added": "✅ Added {quantity}x *{product}* to your cart!\n\n🛒 *Anything else?*\n\nContinue ordering or type 'done' to checkout.",
+    "items_added": "✅ Added {items} to your cart!\n\n🛒 *Would you like to add anything else?*\n\nContinue ordering or type *done* to checkout.",
     "cart_view": (
         "🛒 *Your Cart*\n"
         "─────────────\n"
         "{cart_items}\n"
         "─────────────\n"
         "💰 *Total: ${total}*\n\n"
-        "1️⃣ Continue Shopping\n"
-        "2️⃣ Proceed to Checkout\n"
-        "3️⃣ Clear Cart\n"
-        "4️⃣ Back to Menu"
+        "1️⃣ Add more items\n"
+        "2️⃣ Checkout\n"
+        "3️⃣ Clear cart\n"
+        "4️⃣ Main menu"
     ),
     "cart_empty": (
         "🛒 *Your cart is empty*\n\n"
         "Start shopping to add delicious chocolates!\n\n"
         "1️⃣ Browse Products\n"
-        "2️⃣ Back to Menu"
+        "2️⃣ Main Menu"
     ),
     "checkout_address": (
         "📍 *Delivery Information*\n\n"
         "Please provide your complete delivery address:\n"
         "_Include: Name, Street, Area, City, Contact Number_\n\n"
-        "Example: *John Doe, 123 Cocody Street, Abidjan, +225 XX XX XX XX*"  # Cocody is a district in Abidjan
+        "Example: *John Doe, 123 Cocody Street, Abidjan, +225 XX XX XX XX*"
     ),
     "payment_options": (
         "💳 *Choose Payment Method*\n\n"
@@ -143,59 +139,56 @@ BOT_TEXT = {
         "3️⃣ About Luster\n"
         "4️⃣ Main Menu"
     ),
-    "invalid_product": "❌ Please enter a valid product number (1-9) or product name.",
+    "invalid_product": "❌ Try: *1-7*, product names, or *3 Cocoa Butter, 2 Nibs, done*",
+}
+
+# ─── PRODUCT SHORTCUTS ─────────────────────────────────────────────────
+PRODUCT_ALIASES = {
+    # Single word shortcuts
+    "coffee": 0, "cocoa": 1, "ginger": 2, "nibs": 3, "butter": 4, "powder": 5, "roasted": 6,
+    # Partial matches for better search
+    "bar": [0, 1, 2, 3], "dark": [0, 1, 2, 3], "chocolate": [0, 1, 2, 3],
+    "70": [0, 1, 2, 3], "pack": 6, "premium": 5, "pure": 4,
+    # Alternative names
+    "bean": 0, "beans": 0, "cacao": [1, 3, 4, 5, 6]
 }
 
 # ─── PRODUCT CATALOG ─────────────────────────────────────────────────
 PRODUCTS = [
     {
-        "name": "Roasted Coffee Dark Chocolate Bar",
-        "price": 8.99,
-        "description": "70% Ivorian dark chocolate infused with locally roasted coffee beans. A bold, aromatic experience that celebrates the rich flavors of Côte d'Ivoire. Made from sustainably sourced cacao beans grown in the heart of Africa's cocoa region.",
+        "name": "Roasted Coffee 70% Cocoa",
+        "price": 2.99,
+        "description": "70% dark chocolate infused with perfectly roasted coffee beans for a bold, aromatic flavor that celebrates the rich coffee culture of Côte d'Ivoire.",
     },
     {
-        "name": "Premium Cocoa Bar (70%)",
-        "price": 9.99,
-        "description": "Our signature 70% dark chocolate bar made from slow-roasted Ivorian cacao beans. Pure, intense chocolate flavor with hints of tropical fruit and earthy undertones. Each bar represents hours of careful craftsmanship from bean to bar.",
+        "name": "Roasted Cocoa 70% Cocoa", 
+        "price": 2.99,
+        "description": "Our signature 70% cocoa dark chocolate bar, made from beans slow-roasted to deepen the natural chocolate notes and showcase the terroir of Ivorian cacao.",
     },
     {
-        "name": "Ginger Spice Chocolate Bar",
-        "price": 8.99,
-        "description": "Dark chocolate meets crystallized ginger for a warming, spicy-sweet sensation. Perfect balance of heat and sweetness from local ingredients. The ginger adds a delightful zing that complements the rich cocoa perfectly.",
+        "name": "Ginger 70% Cocoa",
+        "price": 2.99,
+        "description": "Rich dark chocolate meets zesty ginger for a warm, spicy-sweet treat that tingles the palate. A perfect balance of heat and sweetness from local ingredients.",
     },
     {
-        "name": "Cocoa Nibs Dark Chocolate Bar",
-        "price": 9.99,
-        "description": "Crunchy roasted cocoa nibs embedded in smooth dark chocolate. Double the cocoa intensity with satisfying texture. These roasted nibs provide bursts of pure chocolate flavor and a delightful crunch in every bite.",
+        "name": "Cocoa Nibs 70% Cocoa",
+        "price": 2.99,
+        "description": "Crunchy cocoa nibs enrobed in dark chocolate, offering an earthy texture and intense cocoa flavor. Double the cocoa intensity for true chocolate connoisseurs.",
     },
     {
         "name": "Pure Cocoa Butter",
-        "price_range": "$15.00 - $35.00",
-        "price": 25.00,  # Average price for calculations
-        "description": "Premium food-grade cocoa butter from Ivorian cacao beans. Perfect for baking, cooking, or skincare. Available in 250g and 500g sizes. This pure, unrefined cocoa butter retains all its natural properties and delicate chocolate aroma.",
+        "price": 12.00,
+        "description": "100% natural and unrefined cocoa butter sourced from finest Ivorian cacao beans. Perfect for baking, cooking, skincare, and soap making applications.",
     },
     {
-        "name": "Dark Chocolate Covered Cashews",
-        "price_range": "$12.00 - $32.00",
-        "price": 22.00,  # Average price for calculations
-        "description": "Premium roasted cashews enrobed in our signature dark chocolate. Available in 200g and 500g packages. Each cashew is carefully roasted to perfection before being coated in our smooth, rich chocolate.",
+        "name": "Premium Cocoa Powder",
+        "price": 7.00,
+        "description": "Rich, unsweetened cocoa powder perfect for baking and hot chocolate. Made from stone-ground Ivorian beans with exceptional depth and complexity.",
     },
     {
-        "name": "Roasted Cocoa Nibs (Premium Pack)",
-        "price_range": "$14.00 - $28.00",
-        "price": 21.00,  # Average price for calculations
-        "description": "Artisanally roasted cocoa nibs packed with antioxidants. Perfect for smoothies, baking, or healthy snacking. 250g and 500g options. These crunchy nibs are pure chocolate essence - intense, slightly bitter, and incredibly nutritious.",
-    },
-    {
-        "name": "Whole Cocoa Beans",
-        "price": 10.00,
-        "description": "Premium dried and fermented Ivorian cocoa beans. Perfect for chocolate making enthusiasts or as a unique, nutritious snack. These beans showcase the terroir of Côte d'Ivoire's finest cacao growing regions.",
-    },
-    {
-        "name": "Artisan Cocoa Powder",
-        "price_range": "$11.00 - $24.00",
-        "price": 17.50,  # Average price for calculations
-        "description": "Unsweetened, high-fat cocoa powder perfect for baking and hot chocolate. Rich, intense flavor from stone-ground Ivorian beans. 200g and 500g sizes. This powder delivers exceptional depth and complexity to any recipe.",
+        "name": "Roasted Cocoa Nibs Pack",
+        "price": 11.50,
+        "description": "Artisanally roasted cocoa nibs packed with antioxidants. Perfect for smoothies, baking, or healthy snacking. Pure chocolate essence in crunchy form.",
     }
 ]
 
@@ -347,6 +340,76 @@ def generate_order_reference():
     timestamp = datetime.now().strftime("%Y%m%d%H%M")
     return f"LST-{timestamp}-{str(uuid.uuid4())[:4].upper()}"
 
+
+
+def parse_comma_separated_order(text):
+    """Parse comma-separated orders like '3 Cocoa Butter, 6 Roasted Nibs, done'"""
+    text = text.strip()
+    items_to_add = []
+    checkout_requested = False
+    
+    # Split by commas and process each part
+    parts = [part.strip() for part in text.split(',')]
+    
+    for part in parts:
+        part = part.lower().strip()
+        
+        # Check for checkout commands
+        if part in ['done', 'checkout', 'buy', 'finish', 'complete']:
+            checkout_requested = True
+            continue
+            
+        # Try to parse quantity + product name (e.g., "3 cocoa butter")
+        quantity_match = re.match(r'^(\d+)\s+(.+)$', part)
+        if quantity_match:
+            quantity = int(quantity_match.group(1))
+            product_name = quantity_match.group(2)
+            idx, product = find_product_by_name(product_name)
+            if product:
+                items_to_add.append({
+                    'index': idx, 
+                    'quantity': quantity,
+                    'name': product['name']
+                })
+                continue
+        
+        # Try single product name or alias
+        idx, product = find_product_by_name(part)
+        if product:
+            items_to_add.append({
+                'index': idx,
+                'quantity': 1,
+                'name': product['name']
+            })
+            continue
+            
+        # Try number only (1-7)
+        if part.isdigit() and 1 <= int(part) <= len(PRODUCTS):
+            idx = int(part) - 1
+            items_to_add.append({
+                'index': idx,
+                'quantity': 1,
+                'name': PRODUCTS[idx]['name']
+            })
+    
+    return items_to_add, checkout_requested
+
+def process_comma_order(user_cart, items_to_add):
+    """Process comma-separated order items"""
+    added_descriptions = []
+    
+    for item in items_to_add:
+        product_name = item['name']
+        quantity = item['quantity']
+        user_cart = add_to_cart(user_cart, product_name, quantity)
+        
+        if quantity == 1:
+            added_descriptions.append(f"{product_name}")
+        else:
+            added_descriptions.append(f"{quantity}x {product_name}")
+    
+    return user_cart, added_descriptions
+
 # ─── MAIN ROUTE ───────────────────────────────────────────────────────
 @app.route("/", methods=["GET", "POST"])
 def reply():
@@ -436,8 +499,8 @@ def reply():
     if user["status"] == "ordering":
         cart = user.get("cart", [])
         
-        # Handle "done" or "back" commands
-        if "done" in txt:
+        # Handle "done" checkout command
+        if txt.lower() in ['done', 'checkout', 'buy', 'finish', 'complete']:
             if cart:
                 users.update_one({"number": num}, {"$set": {"status": "checkout"}})
                 resp.message(BOT_TEXT["checkout_address"])
@@ -445,40 +508,74 @@ def reply():
                 resp.message("🛒 Your cart is empty! Please add some products first.")
                 resp.message(BOT_TEXT["product_menu"])
             return str(resp)
-        elif "back" in txt:
+        
+        # Handle "back" command
+        if "back" in txt:
             users.update_one({"number": num}, {"$set": {"status": "main"}})
             resp.message(BOT_TEXT["main_menu"])
             return str(resp)
         
-        # Handle number selection (1-9)
+        # Handle cart view
+        if txt.lower() in ['cart', 'show cart', 'my cart']:
+            users.update_one({"number": num}, {"$set": {"status": "cart_view"}})
+            return show_cart_management(resp, cart)
+        
+        # Try comma-separated order parsing first (supports "3 Cocoa Butter, 6 Roasted Nibs, done")
+        if ',' in txt or any(word in txt.lower() for word in ['done', 'checkout', 'buy']):
+            items_to_add, checkout_requested = parse_comma_separated_order(txt)
+            
+            if items_to_add:
+                cart, added_descriptions = process_comma_order(cart, items_to_add)
+                users.update_one({"number": num}, {"$set": {"cart": cart}})
+                
+                items_msg = BOT_TEXT["items_added"].format(items=", ".join(added_descriptions))
+                resp.message(items_msg)
+                
+                # If "done" was included in the order, proceed to checkout
+                if checkout_requested:
+                    users.update_one({"number": num}, {"$set": {"status": "checkout"}})
+                    resp.message(BOT_TEXT["checkout_address"])
+                return str(resp)
+        
+        # Handle single number selection (1-7)
         if txt.isdigit() and 1 <= int(txt) <= len(PRODUCTS):
             product_idx = int(txt) - 1
             product_name = PRODUCTS[product_idx]["name"]
             cart = add_to_cart(cart, product_name, 1)
             
             users.update_one({"number": num}, {"$set": {"cart": cart}})
-            add_msg = BOT_TEXT["item_added"].format(quantity=1, product=product_name)
-            resp.message(add_msg)
+            items_msg = BOT_TEXT["items_added"].format(items=product_name)
+            resp.message(items_msg)
             return str(resp)
         
-        # Handle quantity + product name (e.g., "3 Cocoa Butter")
+        # Handle traditional quantity + product name (e.g., "3 Cocoa Butter")
         elif re.match(r'^\d+\s+\w+', txt):
             quantity, product_name = parse_quantity_command(txt)
             idx, product = find_product_by_name(product_name)
             if product:
                 cart = add_to_cart(cart, product['name'], quantity)
                 users.update_one({"number": num}, {"$set": {"cart": cart}})
-                add_msg = BOT_TEXT["item_added"].format(quantity=quantity, product=product['name'])
-                resp.message(add_msg)
+                if quantity == 1:
+                    items_msg = BOT_TEXT["items_added"].format(items=product['name'])
+                else:
+                    items_msg = BOT_TEXT["items_added"].format(items=f"{quantity}x {product['name']}")
+                resp.message(items_msg)
             else:
                 resp.message(BOT_TEXT["invalid_product"])
                 resp.message(BOT_TEXT["product_menu"])
             return str(resp)
         
-        # Invalid input
+        # Handle product name search (e.g., "ginger", "cocoa butter")
         else:
-            resp.message(BOT_TEXT["invalid_product"])
-            resp.message(BOT_TEXT["product_menu"])
+            idx, product = find_product_by_name(txt)
+            if product:
+                cart = add_to_cart(cart, product['name'], 1)
+                users.update_one({"number": num}, {"$set": {"cart": cart}})
+                items_msg = BOT_TEXT["items_added"].format(items=product['name'])
+                resp.message(items_msg)
+            else:
+                resp.message(BOT_TEXT["invalid_product"])
+                resp.message(BOT_TEXT["product_menu"])
 
     # ─── CART VIEW ───
     if user["status"] == "cart_view":
@@ -503,12 +600,14 @@ def reply():
         if txt == "1":  # Browse Products
             users.update_one({"number": num}, {"$set": {"status": "ordering"}})
             resp.message(BOT_TEXT["product_menu"])
-        elif txt == "2":  # Back to Menu
+        elif txt == "2":  # Main menu
             users.update_one({"number": num}, {"$set": {"status": "main"}})
             resp.message(BOT_TEXT["main_menu"])
         else:
             resp.message(BOT_TEXT["invalid"])
         return str(resp)
+
+
 
     # ─── CHECKOUT ADDRESS ───
     if user["status"] == "checkout":
